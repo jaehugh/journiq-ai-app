@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 
 interface Achievement {
   id: string;
@@ -85,15 +85,11 @@ export const Insights = () => {
                       !isAchieved ? "opacity-40" : ""
                     }`}
                   >
-                    {badge.image ? (
-                      <img
-                        src={badge.image}
-                        alt={badge.title}
-                        className="w-24 h-24 object-contain"
-                      />
-                    ) : (
-                      <badge.icon className="w-16 h-16" />
-                    )}
+                    <img
+                      src={badge.image}
+                      alt={badge.title}
+                      className="w-24 h-24 object-contain"
+                    />
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold">{badge.title}</h3>
                       {isAchieved && (
