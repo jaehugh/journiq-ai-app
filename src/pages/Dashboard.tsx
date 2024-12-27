@@ -26,6 +26,44 @@ export const Dashboard = () => {
     },
   });
 
+  const { data: insights } = useQuery({
+    queryKey: ['journalInsights'],
+    queryFn: async () => {
+      const { data: entries, error } = await supabase
+        .from('journal_entries')
+        .select('category, tags');
+
+      if (error) throw error;
+
+      // Count categories
+      const categoryCount: Record<string, number> = {};
+      entries?.forEach(entry => {
+        if (entry.category) {
+          categoryCount[entry.category] = (categoryCount[entry.category] || 0) + 1;
+        }
+      });
+
+      // Count tags
+      const tagCount: Record<string, number> = {};
+      entries?.forEach(entry => {
+        entry.tags?.forEach(tag => {
+          tagCount[tag] = (tagCount[tag] || 0) + 1;
+        });
+      });
+
+      // Sort and get top 5
+      const topCategories = Object.entries(categoryCount)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5);
+
+      const topTags = Object.entries(tagCount)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5);
+
+      return { topCategories, topTags };
+    },
+  });
+
   const handleEntryClick = (entry: JournalEntry) => {
     setSelectedEntry(entry);
     setDialogOpen(true);
@@ -45,8 +83,29 @@ export const Dashboard = () => {
         </Card>
         
         <Card className="p-6 space-y-4">
-          <h2 className="text-xl font-semibold">Recent Insights</h2>
-          <p className="text-sm text-gray-500">AI-powered analysis of your journal entries.</p>
+          <h2 className="text-xl font-semibold">Most Used Categories</h2>
+          <div className="space-y-2">
+            {insights?.topCategories.map(([category, count]) => (
+              <div key={category} className="flex justify-between items-center">
+                <span className="text-sm">{category}</span>
+                <span className="text-sm text-gray-500">{count} entries</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="p-6 space-y-4">
+          <h2 className="text-xl font-semibold">Popular Tags</h2>
+          <div className="flex flex-wrap gap-2">
+            {insights?.topTags.map(([tag, count]) => (
+              <span 
+                key={tag}
+                className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded"
+              >
+                {tag} ({count})
+              </span>
+            ))}
+          </div>
         </Card>
         
         <Card className="col-span-full p-6 space-y-4">
@@ -69,7 +128,7 @@ export const Dashboard = () => {
                   </div>
                   <p className="text-sm text-gray-600 line-clamp-2">{entry.content}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {entry.tags?.map((tag: string) => (
+                    {entry.tags?.map((tag) => (
                       <span key={tag} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
                         {tag}
                       </span>

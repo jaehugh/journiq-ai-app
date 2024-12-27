@@ -2,18 +2,51 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mic } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+
+const DEFAULT_CATEGORIES = [
+  "Personal",
+  "Business",
+  "Goals",
+  "Reflection",
+  "Ideas",
+  "Learning",
+  "Other"
+];
 
 export const NewEntry = () => {
   const [content, setContent] = useState("");
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [promptDialogOpen, setPromptDialogOpen] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+
+  // Fetch user's subscription tier
+  const { data: subscription } = useQuery({
+    queryKey: ['subscription'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select('tier')
+        .eq('user_id', user.id)
+        .single();
+
+      return subscription || { tier: 'basic' };
+    },
+  });
 
   const generatePrompt = async () => {
     try {
@@ -36,21 +69,6 @@ export const NewEntry = () => {
     }
   };
 
-  const autoTagEntry = async (content: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('auto-tag-entry', {
-        body: { content }
-      });
-      
-      if (error) throw error;
-      
-      return data;
-    } catch (error) {
-      console.error('Error auto-tagging entry:', error);
-      return { tags: [], category: 'general' };
-    }
-  };
-
   const saveEntry = async () => {
     if (!content.trim()) {
       toast({
@@ -67,8 +85,19 @@ export const NewEntry = () => {
       
       if (!user) throw new Error("Not authenticated");
 
-      // Get tags and category from AI
-      const { tags, category } = await autoTagEntry(content);
+      // Get AI-generated title, tags, and category
+      const { data: aiData, error: aiError } = await supabase.functions.invoke('auto-tag-entry', {
+        body: { 
+          content,
+          userTier: subscription?.tier || 'basic'
+        }
+      });
+
+      if (aiError) throw aiError;
+
+      const finalCategory = subscription?.tier === 'pro' ? 
+        (category || customCategory || aiData.category) :
+        (category || aiData.category);
 
       const { error } = await supabase
         .from('journal_entries')
@@ -76,8 +105,9 @@ export const NewEntry = () => {
           {
             user_id: user.id,
             content,
-            tags,
-            category
+            title: subscription?.tier === 'pro' ? aiData.title : (title || 'Untitled Entry'),
+            category: finalCategory,
+            tags: aiData.tags
           },
         ]);
 
@@ -89,6 +119,9 @@ export const NewEntry = () => {
       });
       
       setContent("");
+      setTitle("");
+      setCategory("");
+      setCustomCategory("");
     } catch (error) {
       console.error('Error saving entry:', error);
       toast({
@@ -123,6 +156,39 @@ export const NewEntry = () => {
               Voice Input
             </Button>
           </div>
+
+          {subscription?.tier !== 'pro' && (
+            <Input
+              placeholder="Entry title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          )}
+          
+          {subscription?.tier !== 'basic' && (
+            <div className="space-y-2">
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DEFAULT_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {subscription?.tier === 'pro' && (
+                <Input
+                  placeholder="Or enter a custom category"
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                />
+              )}
+            </div>
+          )}
           
           <Textarea
             placeholder="Start writing your journal entry..."
