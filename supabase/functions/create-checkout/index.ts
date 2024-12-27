@@ -7,6 +7,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const PRICE_IDS = {
+  PRO_MONTHLY: 'price_1QWk3ZAC3xzW6CxUplNxKSYf',
+  PRO_YEARLY: 'price_1Qaks1AC3xzW6CxUylLcvd6O',
+  PLUS_MONTHLY: 'price_1QTtXhAC3xzW6CxUVB0cNsPH',
+  PLUS_YEARLY: 'price_1Qakt3AC3xzW6CxUTdBs9SE6',
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -16,8 +23,8 @@ serve(async (req) => {
   try {
     const { priceId } = await req.json();
     
-    if (!priceId) {
-      throw new Error('Price ID is required');
+    if (!Object.values(PRICE_IDS).includes(priceId)) {
+      throw new Error('Invalid price ID');
     }
 
     const supabaseClient = createClient(
