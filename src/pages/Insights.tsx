@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { Award, Calendar, CheckCircle } from "lucide-react";
+import { Calendar, CheckCircle } from "lucide-react";
 
 interface Achievement {
   id: string;
@@ -38,7 +38,7 @@ export const Insights = () => {
     {
       title: "6 Month Dedication",
       description: "Half a year of consistent journaling",
-      icon: Award,
+      image: "/lovable-uploads/05421753-9ae2-4a42-8e73-6855ebcaaefc.png",
       type: "six_month_streak"
     },
     {
