@@ -1,12 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-interface Profile {
-  id: string;
-  display_name: string | null;
-  avatar_url: string | null;
-}
+import type { Profile } from "@/integrations/supabase/types";
 
 export const useProfileData = () => {
   const { toast } = useToast();
