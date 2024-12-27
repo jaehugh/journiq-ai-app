@@ -16,6 +16,10 @@ export const useProfile = () => {
       if (!response.ok) throw new Error("Failed to fetch subscription status");
       return response.json();
     },
+    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
+    cacheTime: 1000 * 60 * 30, // Keep data in cache for 30 minutes
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    refetchOnMount: false, // Don't refetch on component mount if data exists
   });
 
   const handleUpgrade = async (priceId: string) => {
