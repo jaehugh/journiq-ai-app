@@ -20,7 +20,7 @@ export const useProfileData = () => {
         .maybeSingle();
 
       if (error) throw error;
-      return data as Profile | null;
+      return data as Profile['Row'] | null;
     },
   });
 
