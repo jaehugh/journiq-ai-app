@@ -1,0 +1,15 @@
+import { Navbar } from "./Navbar";
+import { Outlet } from "react-router-dom";
+
+export const Layout = () => {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex flex-col md:flex-row min-h-screen">
+        <Navbar />
+        <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8 animate-fade-in">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+};
