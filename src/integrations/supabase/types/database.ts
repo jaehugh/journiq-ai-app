@@ -114,7 +114,7 @@ interface JournalEntry {
   };
 }
 
-interface Profile {
+export interface Profile {
   Row: {
     id: string;
     display_name: string | null;
