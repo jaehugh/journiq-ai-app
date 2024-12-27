@@ -1,1 +1,4 @@
 project_id = "rlwtvnffwscsbtlzjeqe"
+
+[upload-profile-image]
+verify_jwt = true

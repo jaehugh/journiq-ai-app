@@ -16,22 +16,25 @@ export const AccountSettings = () => {
     if (file) {
       setSelectedFile(file);
       setIsUploading(true);
+      
       try {
         const formData = new FormData();
         formData.append('file', file);
         
-        const response = await fetch('/functions/v1/upload-profile-image', {
-          method: 'POST',
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          throw new Error('No access token available');
+        }
+
+        const { data, error } = await supabase.functions.invoke('upload-profile-image', {
           body: formData,
           headers: {
-            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
         });
 
-        const responseData = await response.json();
-
-        if (!response.ok) {
-          throw new Error(responseData.error || 'Failed to upload image');
+        if (error) {
+          throw error;
         }
 
         toast({
