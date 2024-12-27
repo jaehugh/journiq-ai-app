@@ -37,17 +37,54 @@ export const EntryDialog = ({ entry, open, onOpenChange, onEntryUpdated }: Entry
   const handleUpdate = async () => {
     try {
       setIsLoading(true);
-      const { error } = await supabase
-        .from("journal_entries")
-        .update({
-          title,
-          content,
-          category,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", entry.id);
 
-      if (error) throw error;
+      // Get user's subscription tier
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select('tier')
+        .eq('user_id', user.id)
+        .single();
+
+      // For pro users, get AI-generated metadata
+      if (subscription?.tier === 'pro' || subscription?.tier === 'plus') {
+        const { data: aiData, error: aiError } = await supabase.functions.invoke('auto-tag-entry', {
+          body: { 
+            content,
+            userTier: subscription.tier
+          }
+        });
+
+        if (aiError) throw aiError;
+
+        const { error } = await supabase
+          .from("journal_entries")
+          .update({
+            title: subscription.tier === 'pro' ? aiData.title : title,
+            content,
+            category: category || aiData.category,
+            tags: aiData.tags,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", entry.id);
+
+        if (error) throw error;
+      } else {
+        // For basic users, just update the entry without AI processing
+        const { error } = await supabase
+          .from("journal_entries")
+          .update({
+            title,
+            content,
+            category,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", entry.id);
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Success",
@@ -113,12 +150,12 @@ export const EntryDialog = ({ entry, open, onOpenChange, onEntryUpdated }: Entry
           </div>
           <div className="space-y-2">
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white dark:bg-gray-800">
                 {CATEGORIES.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
+                  <SelectItem key={cat} value={cat} className="cursor-pointer">
                     {cat}
                   </SelectItem>
                 ))}
