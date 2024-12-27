@@ -36,6 +36,21 @@ export const NewEntry = () => {
     }
   };
 
+  const autoTagEntry = async (content: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('auto-tag-entry', {
+        body: { content }
+      });
+      
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('Error auto-tagging entry:', error);
+      return { tags: [], category: 'general' };
+    }
+  };
+
   const saveEntry = async () => {
     if (!content.trim()) {
       toast({
@@ -52,12 +67,17 @@ export const NewEntry = () => {
       
       if (!user) throw new Error("Not authenticated");
 
+      // Get tags and category from AI
+      const { tags, category } = await autoTagEntry(content);
+
       const { error } = await supabase
         .from('journal_entries')
         .insert([
           {
             user_id: user.id,
             content,
+            tags,
+            category
           },
         ]);
 
