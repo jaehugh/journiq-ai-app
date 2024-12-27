@@ -8,12 +8,14 @@ import { supabase } from "@/integrations/supabase/client";
 export const AccountSettings = () => {
   const [displayName, setDisplayName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
+      setIsUploading(true);
       try {
         const formData = new FormData();
         formData.append('file', file);
@@ -26,25 +28,44 @@ export const AccountSettings = () => {
           },
         });
 
-        if (!response.ok) throw new Error('Failed to upload image');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to upload image');
+        }
+
+        const data = await response.json();
 
         toast({
           title: "Success",
           description: "Profile image updated successfully",
         });
       } catch (error) {
+        console.error('Upload error:', error);
         toast({
           title: "Error",
-          description: "Failed to upload profile image",
+          description: error instanceof Error ? error.message : "Failed to upload profile image",
           variant: "destructive",
         });
+        setSelectedFile(null);
+      } finally {
+        setIsUploading(false);
       }
     }
   };
 
   const handleDisplayNameUpdate = async () => {
+    if (!displayName.trim()) {
+      toast({
+        title: "Error",
+        description: "Display name cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      // Update display name logic here
+      // Here we would update the display name in the database
+      // For now, we'll just show a success message
       toast({
         title: "Success",
         description: "Display name updated successfully",
@@ -65,23 +86,29 @@ export const AccountSettings = () => {
         <div>
           <h2 className="text-xl font-semibold mb-4">Profile Image</h2>
           <div className="flex items-center space-x-4">
-            <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center">
+            <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
               {selectedFile ? (
                 <img
                   src={URL.createObjectURL(selectedFile)}
                   alt="Profile"
-                  className="w-full h-full rounded-full object-cover"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <span className="text-2xl text-gray-500">?</span>
               )}
             </div>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="max-w-xs"
-            />
+            <div className="flex flex-col space-y-2">
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="max-w-xs"
+                disabled={isUploading}
+              />
+              {isUploading && (
+                <p className="text-sm text-gray-500">Uploading...</p>
+              )}
+            </div>
           </div>
         </div>
 
