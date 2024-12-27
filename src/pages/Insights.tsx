@@ -26,7 +26,7 @@ export const Insights = () => {
     {
       title: "1 Week Streak",
       description: "Journaled consistently for a week",
-      icon: Calendar,
+      image: "/lovable-uploads/2adcfbc9-fb51-4ae8-b9d9-b727f1037d03.png",
       type: "week_streak"
     },
     {
