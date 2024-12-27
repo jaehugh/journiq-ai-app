@@ -48,19 +48,15 @@ export const Profile = () => {
 
   const handleUpgrade = async (priceId: string) => {
     try {
-      const response = await fetch("/functions/v1/create-checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
-        body: JSON.stringify({ priceId }),
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { priceId },
       });
 
-      const { url, error } = await response.json();
-      if (error) throw new Error(error);
-      if (url) window.location.href = url;
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url;
+      
     } catch (error) {
+      console.error('Checkout error:', error);
       toast({
         title: "Error",
         description: "Failed to start checkout process. Please try again.",
