@@ -2,7 +2,6 @@ import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { JournalPrompt } from "@/components/journal/JournalPrompt";
-import { VoiceInput } from "@/components/journal/VoiceInput";
 import { JournalForm } from "@/components/journal/JournalForm";
 
 export const NewEntry = () => {
@@ -28,11 +27,6 @@ export const NewEntry = () => {
     console.log("Selected prompt:", prompt);
   };
 
-  const handleVoiceInput = (text: string) => {
-    // This will be implemented when voice input is ready
-    console.log("Voice input:", text);
-  };
-
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
       <header className="space-y-1">
@@ -42,11 +36,7 @@ export const NewEntry = () => {
       
       <Card className="p-6">
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <JournalPrompt onPromptSelect={handlePromptSelect} />
-            <VoiceInput onVoiceInput={handleVoiceInput} />
-          </div>
-
+          <JournalPrompt onPromptSelect={handlePromptSelect} />
           <JournalForm subscription={subscription} />
         </div>
       </Card>
