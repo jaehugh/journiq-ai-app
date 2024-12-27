@@ -32,7 +32,7 @@ export const Insights = () => {
     {
       title: "30 Day Streak",
       description: "Maintained journaling for a month",
-      icon: Calendar,
+      image: "/lovable-uploads/88606a61-8adf-42da-889a-84f186580808.png",
       type: "month_streak"
     },
     {
