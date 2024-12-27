@@ -12,6 +12,7 @@ export const NewEntry = () => {
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [promptDialogOpen, setPromptDialogOpen] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const generatePrompt = async () => {
@@ -46,6 +47,7 @@ export const NewEntry = () => {
     }
 
     try {
+      setIsSaving(true);
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) throw new Error("Not authenticated");
@@ -56,7 +58,6 @@ export const NewEntry = () => {
           {
             user_id: user.id,
             content,
-            created_at: new Date().toISOString(),
           },
         ]);
 
@@ -75,6 +76,8 @@ export const NewEntry = () => {
         title: "Error",
         description: "Failed to save journal entry. Please try again.",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -109,7 +112,12 @@ export const NewEntry = () => {
           />
           
           <div className="flex justify-end">
-            <Button onClick={saveEntry}>Save Entry</Button>
+            <Button 
+              onClick={saveEntry}
+              disabled={isSaving}
+            >
+              {isSaving ? "Saving..." : "Save Entry"}
+            </Button>
           </div>
         </div>
       </Card>
@@ -122,9 +130,22 @@ export const NewEntry = () => {
           <div className="py-4">
             <p className="text-lg">{generatedPrompt}</p>
           </div>
-          <div className="flex justify-end">
-            <Button onClick={() => setPromptDialogOpen(false)}>
+          <div className="flex justify-end gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setPromptDialogOpen(false)}
+            >
               Close
+            </Button>
+            <Button
+              onClick={() => {
+                setContent((prev) => 
+                  prev ? `${prev}\n\n${generatedPrompt}` : generatedPrompt
+                );
+                setPromptDialogOpen(false);
+              }}
+            >
+              Use Prompt
             </Button>
           </div>
         </DialogContent>
