@@ -28,12 +28,11 @@ export const AccountSettings = () => {
           },
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to upload image');
-        }
+        const responseData = await response.json();
 
-        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(responseData.error || 'Failed to upload image');
+        }
 
         toast({
           title: "Success",
