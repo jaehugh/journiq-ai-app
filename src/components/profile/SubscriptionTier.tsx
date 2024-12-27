@@ -40,7 +40,7 @@ export const SubscriptionTier = ({
         <div className="space-y-2">
           <p className="text-sm text-gray-500">or {details.yearlyPrice}</p>
           <Badge variant="secondary" className="bg-green-100 text-green-800">
-            Save 2 months with yearly billing
+            2 months free with yearly billing
           </Badge>
         </div>
       )}
