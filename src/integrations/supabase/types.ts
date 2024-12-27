@@ -30,6 +30,36 @@ export type Database = {
         }
         Relationships: []
       }
+      goals: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_achieved: boolean | null
+          is_ai_generated: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_achieved?: boolean | null
+          is_ai_generated?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_achieved?: boolean | null
+          is_ai_generated?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       journal_entries: {
         Row: {
           category: string | null
