@@ -1,4 +1,1 @@
 project_id = "rlwtvnffwscsbtlzjeqe"
-
-[process-existing-entries]
-verify_jwt = true
