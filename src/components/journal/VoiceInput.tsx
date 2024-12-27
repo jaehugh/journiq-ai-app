@@ -29,6 +29,8 @@ interface SpeechRecognitionEvent {
       [index: number]: {
         transcript: string;
       };
+    } & {
+      isFinal: boolean;
     };
     length: number;
   };
