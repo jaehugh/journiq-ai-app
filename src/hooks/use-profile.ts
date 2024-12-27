@@ -17,7 +17,7 @@ export const useProfile = () => {
       return response.json();
     },
     staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
-    cacheTime: 1000 * 60 * 30, // Keep data in cache for 30 minutes
+    gcTime: 1000 * 60 * 30, // Keep data in cache for 30 minutes (formerly cacheTime)
     refetchOnWindowFocus: false, // Don't refetch when window regains focus
     refetchOnMount: false, // Don't refetch on component mount if data exists
   });
