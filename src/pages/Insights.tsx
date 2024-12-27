@@ -1,6 +1,53 @@
-import { Card } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Achievement {
+  id: string;
+  badge_type: string;
+  achieved_at: string;
+}
 
 export const Insights = () => {
+  const { data: achievements } = useQuery({
+    queryKey: ["achievements"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("achievements")
+        .select("*");
+      
+      if (error) throw error;
+      return data as Achievement[];
+    },
+  });
+
+  const badges = [
+    {
+      title: "1 Week Streak",
+      description: "Journaled consistently for a week",
+      image: "/placeholder.svg",
+      type: "week_streak"
+    },
+    {
+      title: "30 Day Streak",
+      description: "Maintained journaling for a month",
+      image: "/placeholder.svg",
+      type: "month_streak"
+    },
+    {
+      title: "6 Month Dedication",
+      description: "Half a year of consistent journaling",
+      image: "/placeholder.svg",
+      type: "six_month_streak"
+    },
+    {
+      title: "Journal Master",
+      description: "One year of journaling excellence",
+      image: "/lovable-uploads/90056f35-f70e-450e-82f0-b8785240e462.png",
+      type: "year_streak"
+    }
+  ];
+
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
       <header className="space-y-1">
@@ -19,9 +66,36 @@ export const Insights = () => {
           <p className="text-sm text-gray-500">Track your journaling journey.</p>
         </Card>
         
-        <Card className="p-6 space-y-4">
-          <h2 className="text-xl font-semibold">Achievements</h2>
-          <p className="text-sm text-gray-500">View your earned badges and streaks.</p>
+        <Card className="col-span-full">
+          <CardHeader>
+            <CardTitle>Achievements</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {badges.map((badge) => {
+                const isAchieved = achievements?.some(
+                  (achievement) => achievement.badge_type === badge.type
+                );
+                
+                return (
+                  <div
+                    key={badge.type}
+                    className={`flex flex-col items-center text-center space-y-2 ${
+                      !isAchieved ? "opacity-40" : ""
+                    }`}
+                  >
+                    <img
+                      src={badge.image}
+                      alt={badge.title}
+                      className="w-24 h-24 object-contain"
+                    />
+                    <h3 className="font-semibold">{badge.title}</h3>
+                    <p className="text-sm text-gray-500">{badge.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
         </Card>
       </div>
     </div>
