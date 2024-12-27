@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 type TierDetails = {
   name: string;
   price: string;
-  features: string[];
+  features: readonly string[];
   yearlyPrice?: string;
   monthlyPriceId?: string;
   yearlyPriceId?: string;
