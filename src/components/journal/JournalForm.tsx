@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { VoiceInput } from "./VoiceInput";
 
 const DEFAULT_CATEGORIES = [
   "Personal",
@@ -27,6 +28,14 @@ export const JournalForm = ({ subscription }: JournalFormProps) => {
   const [customCategory, setCustomCategory] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+
+  const handleVoiceInput = (text: string) => {
+    setContent((prevContent) => {
+      // Add a space if there's existing content
+      const separator = prevContent ? ' ' : '';
+      return prevContent + separator + text;
+    });
+  };
 
   const saveEntry = async () => {
     if (!content.trim()) {
@@ -128,12 +137,17 @@ export const JournalForm = ({ subscription }: JournalFormProps) => {
         </div>
       )}
       
-      <Textarea
-        placeholder="Start writing your journal entry..."
-        className="min-h-[300px]"
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-      />
+      <div className="space-y-2">
+        <div className="flex justify-end">
+          <VoiceInput onVoiceInput={handleVoiceInput} />
+        </div>
+        <Textarea
+          placeholder="Start writing your journal entry..."
+          className="min-h-[300px]"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+        />
+      </div>
       
       <div className="flex justify-end">
         <Button 
