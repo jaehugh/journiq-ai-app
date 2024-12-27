@@ -30,6 +30,31 @@ interface SubscriptionPlansProps {
 }
 
 export const SubscriptionPlans = ({ currentTier, onUpgrade }: SubscriptionPlansProps) => {
+  // If user is on pro tier, don't show any subscription options
+  if (currentTier === 'pro') {
+    return (
+      <div className="text-center p-6">
+        <h3 className="text-xl font-semibold mb-2">Pro Subscription Active</h3>
+        <p className="text-gray-500">You're enjoying all premium features!</p>
+      </div>
+    );
+  }
+
+  // If user is on plus tier, only show pro tier
+  if (currentTier === 'plus') {
+    return (
+      <div className="max-w-md mx-auto">
+        <SubscriptionTier
+          tier="pro"
+          details={TIER_DETAILS.pro}
+          currentTier={currentTier}
+          onUpgrade={onUpgrade}
+        />
+      </div>
+    );
+  }
+
+  // Show all tiers for basic users
   return (
     <div className="grid gap-6 md:grid-cols-3">
       {(Object.entries(TIER_DETAILS) as [keyof typeof TIER_DETAILS, typeof TIER_DETAILS[keyof typeof TIER_DETAILS]][]).map(([tier, details]) => (
