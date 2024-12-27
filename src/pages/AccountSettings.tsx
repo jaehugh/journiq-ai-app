@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useProfileData } from "@/hooks/use-profile-data";
 
 export const AccountSettings = () => {
-  const [displayName, setDisplayName] = useState("");
+  const { profile, updateProfile } = useProfileData();
+  const [displayName, setDisplayName] = useState(profile?.display_name || "");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
@@ -33,10 +35,11 @@ export const AccountSettings = () => {
           },
         });
 
-        if (error) {
-          throw error;
-        }
+        if (error) throw error;
 
+        // Update profile with new avatar URL
+        await updateProfile.mutateAsync({ avatarUrl: data.url });
+        
         toast({
           title: "Success",
           description: "Profile image updated successfully",
@@ -66,18 +69,9 @@ export const AccountSettings = () => {
     }
 
     try {
-      // Here we would update the display name in the database
-      // For now, we'll just show a success message
-      toast({
-        title: "Success",
-        description: "Display name updated successfully",
-      });
+      await updateProfile.mutateAsync({ displayName: displayName.trim() });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update display name",
-        variant: "destructive",
-      });
+      console.error('Error updating display name:', error);
     }
   };
 
@@ -89,9 +83,9 @@ export const AccountSettings = () => {
           <h2 className="text-xl font-semibold mb-4">Profile Image</h2>
           <div className="flex items-center space-x-4">
             <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-              {selectedFile ? (
+              {(selectedFile || profile?.avatar_url) ? (
                 <img
-                  src={URL.createObjectURL(selectedFile)}
+                  src={selectedFile ? URL.createObjectURL(selectedFile) : profile?.avatar_url}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
