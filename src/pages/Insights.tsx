@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { Award, Calendar, CheckCircle } from "lucide-react";
 
 interface Achievement {
   id: string;
@@ -25,19 +26,19 @@ export const Insights = () => {
     {
       title: "1 Week Streak",
       description: "Journaled consistently for a week",
-      image: "/placeholder.svg",
+      icon: Calendar,
       type: "week_streak"
     },
     {
       title: "30 Day Streak",
       description: "Maintained journaling for a month",
-      image: "/placeholder.svg",
+      icon: Calendar,
       type: "month_streak"
     },
     {
       title: "6 Month Dedication",
       description: "Half a year of consistent journaling",
-      image: "/placeholder.svg",
+      icon: Award,
       type: "six_month_streak"
     },
     {
@@ -49,7 +50,7 @@ export const Insights = () => {
   ];
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="space-y-8 max-w-6xl mx-auto p-6">
       <header className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight">Insights</h1>
         <p className="text-gray-500">Track your progress and achievements.</p>
@@ -84,12 +85,21 @@ export const Insights = () => {
                       !isAchieved ? "opacity-40" : ""
                     }`}
                   >
-                    <img
-                      src={badge.image}
-                      alt={badge.title}
-                      className="w-24 h-24 object-contain"
-                    />
-                    <h3 className="font-semibold">{badge.title}</h3>
+                    {badge.image ? (
+                      <img
+                        src={badge.image}
+                        alt={badge.title}
+                        className="w-24 h-24 object-contain"
+                      />
+                    ) : (
+                      <badge.icon className="w-16 h-16" />
+                    )}
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold">{badge.title}</h3>
+                      {isAchieved && (
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500">{badge.description}</p>
                   </div>
                 );
