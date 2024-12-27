@@ -48,12 +48,22 @@ export const Profile = () => {
 
   const handleUpgrade = async (priceId: string) => {
     try {
+      console.log("Creating checkout session for price:", priceId);
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { priceId },
       });
 
-      if (error) throw error;
-      if (data?.url) window.location.href = data.url;
+      if (error) {
+        console.error('Checkout error:', error);
+        throw error;
+      }
+
+      if (data?.url) {
+        console.log("Redirecting to checkout URL:", data.url);
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL received");
+      }
       
     } catch (error) {
       console.error('Checkout error:', error);
@@ -66,7 +76,17 @@ export const Profile = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
