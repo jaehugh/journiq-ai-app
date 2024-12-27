@@ -31,7 +31,10 @@ export const Profile = () => {
             currentTier={subscription?.tier}
             onUpgrade={handleUpgrade}
           />
-          <ProfileActions onLogout={handleLogout} />
+          <ProfileActions 
+            onLogout={handleLogout}
+            currentTier={subscription?.tier}
+          />
         </div>
       </Card>
     </div>

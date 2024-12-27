@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PremiumTag } from "@/components/ui/premium-tag";
 
 type TierDetails = {
   name: string;
@@ -32,9 +33,16 @@ export const SubscriptionTier = ({
     onUpgrade(priceId);
   };
 
+  const showPremiumTag = currentTier === 'basic' && tier !== 'basic';
+
   return (
     <Card className="p-6 space-y-4">
-      <h3 className="text-lg font-semibold">{details.name}</h3>
+      <div className="flex justify-between items-start">
+        <h3 className="text-lg font-semibold">{details.name}</h3>
+        {showPremiumTag && (
+          <PremiumTag tier={tier as "plus" | "pro"} />
+        )}
+      </div>
       <p className="text-2xl font-bold">{details.price}</p>
       {'yearlyPrice' in details && (
         <div className="space-y-2">
