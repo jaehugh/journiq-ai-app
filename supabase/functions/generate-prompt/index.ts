@@ -12,24 +12,28 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { userId } = await req.json();
+    // Create Supabase client
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
-    // Fetch user's active goals
+    // Get user's active goals
     const { data: goals } = await supabase
       .from('goals')
       .select('content')
-      .eq('user_id', userId)
       .eq('is_achieved', false);
+
+    console.log('Retrieved goals:', goals);
 
     const goalsContext = goals?.map(goal => 
       `- ${goal.content}`
-    ).join('\n');
+    ).join('\n') || 'No active goals found';
+
+    console.log('Sending request to OpenAI with goals context:', goalsContext);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -44,7 +48,8 @@ serve(async (req) => {
             role: 'system',
             content: `You are an AI that generates thoughtful journal prompts. 
             Consider the user's current goals when generating prompts to help them 
-            reflect on their progress and challenges.`
+            reflect on their progress and challenges. Keep the prompts concise 
+            and focused.`
           },
           {
             role: 'user',
@@ -54,17 +59,40 @@ serve(async (req) => {
       }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
     const data = await response.json();
+    console.log('OpenAI response:', data);
+
     const prompt = data.choices[0].message.content;
 
-    return new Response(JSON.stringify({ prompt }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ prompt }), 
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
+    );
   } catch (error) {
     console.error('Error in generate-prompt function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ 
+        error: error.message || 'Internal server error',
+        details: error.toString()
+      }), 
+      {
+        status: 500,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        }
+      }
+    );
   }
 });
