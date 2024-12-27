@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Settings, Lock, MessageSquare, Tag, LogOut } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const TIER_DETAILS = {
   basic: {
@@ -27,7 +27,7 @@ const TIER_DETAILS = {
     monthlyPriceId: "price_1QWk3ZAC3xzW6CxUplNxKSYf",
     yearlyPriceId: "price_1Qaks1AC3xzW6CxUylLcvd6O",
   },
-};
+} as const;
 
 export const Profile = () => {
   const { toast } = useToast();
@@ -98,11 +98,11 @@ export const Profile = () => {
 
         <div className="space-y-6">
           <div className="grid gap-6 md:grid-cols-3">
-            {Object.entries(TIER_DETAILS).map(([tier, details]) => (
+            {(Object.entries(TIER_DETAILS) as [keyof typeof TIER_DETAILS, typeof TIER_DETAILS[keyof typeof TIER_DETAILS]][]).map(([tier, details]) => (
               <Card key={tier} className="p-6 space-y-4">
                 <h3 className="text-lg font-semibold">{details.name}</h3>
                 <p className="text-2xl font-bold">{details.price}</p>
-                {details.yearlyPrice && (
+                {'yearlyPrice' in details && (
                   <p className="text-sm text-gray-500">or {details.yearlyPrice}</p>
                 )}
                 <ul className="space-y-2">
@@ -114,19 +114,23 @@ export const Profile = () => {
                 </ul>
                 {tier !== "basic" && subscription?.tier !== tier && (
                   <div className="space-y-2">
-                    <Button
-                      className="w-full"
-                      onClick={() => handleUpgrade(details.monthlyPriceId)}
-                    >
-                      Upgrade Monthly
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => handleUpgrade(details.yearlyPriceId)}
-                    >
-                      Upgrade Yearly
-                    </Button>
+                    {'monthlyPriceId' in details && (
+                      <Button
+                        className="w-full"
+                        onClick={() => handleUpgrade(details.monthlyPriceId)}
+                      >
+                        Upgrade Monthly
+                      </Button>
+                    )}
+                    {'yearlyPriceId' in details && (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => handleUpgrade(details.yearlyPriceId)}
+                      >
+                        Upgrade Yearly
+                      </Button>
+                    )}
                   </div>
                 )}
               </Card>
