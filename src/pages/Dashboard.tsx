@@ -1,9 +1,18 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { EntryDialog } from "@/components/journal/EntryDialog";
+import { Tables } from "@/integrations/supabase/types";
+import { format } from "date-fns";
+
+type JournalEntry = Tables<"journal_entries">;
 
 export const Dashboard = () => {
-  const { data: recentEntries, isLoading } = useQuery({
+  const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const { data: recentEntries, isLoading, refetch } = useQuery({
     queryKey: ['recentEntries'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -16,6 +25,11 @@ export const Dashboard = () => {
       return data;
     },
   });
+
+  const handleEntryClick = (entry: JournalEntry) => {
+    setSelectedEntry(entry);
+    setDialogOpen(true);
+  };
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
@@ -42,8 +56,18 @@ export const Dashboard = () => {
           ) : recentEntries && recentEntries.length > 0 ? (
             <div className="space-y-4">
               {recentEntries.map((entry) => (
-                <Card key={entry.id} className="p-4">
-                  <p className="text-sm text-gray-600 line-clamp-3">{entry.content}</p>
+                <Card 
+                  key={entry.id} 
+                  className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => handleEntryClick(entry)}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-medium">{entry.title}</h3>
+                    <span className="text-xs text-gray-500">
+                      {format(new Date(entry.created_at), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 line-clamp-2">{entry.content}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {entry.tags?.map((tag: string) => (
                       <span key={tag} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
@@ -64,6 +88,15 @@ export const Dashboard = () => {
           )}
         </Card>
       </div>
+
+      {selectedEntry && (
+        <EntryDialog
+          entry={selectedEntry}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onEntryUpdated={refetch}
+        />
+      )}
     </div>
   );
 };
