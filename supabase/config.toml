@@ -29,3 +29,6 @@ enabled = true
 [edge_functions]
 [edge_functions.generate-prompt]
 verify_jwt = true
+
+[edge_functions.upload-profile-image]
+verify_jwt = true

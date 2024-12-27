@@ -43,6 +43,8 @@ serve(async (req) => {
     const fileExt = (file as File).name.split('.').pop()
     const filePath = `${user.id}/${crypto.randomUUID()}.${fileExt}`
 
+    console.log('Uploading file:', filePath)
+
     // Upload the file to the profile-images bucket
     const { data, error: uploadError } = await supabase.storage
       .from('profile-images')
@@ -60,6 +62,8 @@ serve(async (req) => {
     const { data: { publicUrl } } = supabase.storage
       .from('profile-images')
       .getPublicUrl(filePath)
+
+    console.log('File uploaded successfully:', publicUrl)
 
     return new Response(
       JSON.stringify({ 
