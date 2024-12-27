@@ -8,6 +8,9 @@ import { NewEntry } from "@/pages/NewEntry";
 import { Search } from "@/pages/Search";
 import { Profile } from "@/pages/Profile";
 import { Login } from "@/pages/Login";
+import { AccountSettings } from "@/pages/AccountSettings";
+import { CustomCategories } from "@/pages/CustomCategories";
+import { PrivacySettings } from "@/pages/PrivacySettings";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -57,6 +60,9 @@ const App = () => {
             <Route path="new" element={<NewEntry />} />
             <Route path="search" element={<Search />} />
             <Route path="profile" element={<Profile />} />
+            <Route path="account-settings" element={<AccountSettings />} />
+            <Route path="custom-categories" element={<CustomCategories />} />
+            <Route path="privacy-settings" element={<PrivacySettings />} />
           </Route>
         </Routes>
       </BrowserRouter>

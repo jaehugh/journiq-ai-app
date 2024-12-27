@@ -23,7 +23,7 @@ export const ProfileActions = ({ onLogout, currentTier }: ProfileActionsProps) =
       });
       return;
     }
-    navigate("/new"); // Navigate to new entry page where custom categories are available
+    navigate("/custom-categories");
   };
 
   const handleLiveSupport = () => {
@@ -35,28 +35,8 @@ export const ProfileActions = ({ onLogout, currentTier }: ProfileActionsProps) =
       });
       return;
     }
-    // Implement live support logic for pro users
-    toast({
-      title: "Live Support",
-      description: "Connecting to support...",
-      variant: "default",
-    });
-  };
-
-  const handleSettings = () => {
-    toast({
-      title: "Account Settings",
-      description: "Opening account settings...",
-      variant: "default",
-    });
-  };
-
-  const handlePrivacy = () => {
-    toast({
-      title: "Privacy Settings",
-      description: "Opening privacy settings...",
-      variant: "default",
-    });
+    // Redirect to ManyChat
+    window.location.href = `https://manychat.com/chat?api=${encodeURIComponent("517879698071565:8d0cc16cd1b0d8ddb986bc66a39060f5")}`;
   };
 
   return (
@@ -64,7 +44,7 @@ export const ProfileActions = ({ onLogout, currentTier }: ProfileActionsProps) =
       <Button 
         variant="outline" 
         className="w-full justify-start"
-        onClick={handleSettings}
+        onClick={() => navigate("/account-settings")}
       >
         <Settings className="w-4 h-4 mr-2" />
         Account Settings
@@ -102,7 +82,7 @@ export const ProfileActions = ({ onLogout, currentTier }: ProfileActionsProps) =
       <Button 
         variant="outline" 
         className="w-full justify-start"
-        onClick={handlePrivacy}
+        onClick={() => navigate("/privacy-settings")}
       >
         <Lock className="w-4 h-4 mr-2" />
         Privacy Settings
