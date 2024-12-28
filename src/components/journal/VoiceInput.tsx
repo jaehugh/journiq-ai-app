@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -7,7 +7,6 @@ interface VoiceInputProps {
   onVoiceInput: (text: string) => void;
 }
 
-// Define the WebkitSpeechRecognition type
 declare global {
   interface Window {
     webkitSpeechRecognition: new () => SpeechRecognition;
@@ -17,10 +16,14 @@ declare global {
 interface SpeechRecognition extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
+  lang: string;
+  maxAlternatives: number;
   onresult: (event: SpeechRecognitionEvent) => void;
   onerror: (event: SpeechRecognitionErrorEvent) => void;
+  onend: () => void;
   start: () => void;
   stop: () => void;
+  abort: () => void;
 }
 
 interface SpeechRecognitionEvent {
@@ -28,6 +31,7 @@ interface SpeechRecognitionEvent {
     [index: number]: {
       [index: number]: {
         transcript: string;
+        confidence: number;
       };
     } & {
       isFinal: boolean;
@@ -38,16 +42,29 @@ interface SpeechRecognitionEvent {
 
 interface SpeechRecognitionErrorEvent {
   error: string;
+  message: string;
 }
 
 export const VoiceInput = ({ onVoiceInput }: VoiceInputProps) => {
   const [isRecording, setIsRecording] = useState(false);
-  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const { toast } = useToast();
+  const transcriptRef = useRef<string>("");
+
+  const stopRecording = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+      setIsRecording(false);
+      toast({
+        title: "Recording stopped",
+        description: "Voice input has been processed.",
+      });
+    }
+  }, [toast]);
 
   const startRecording = useCallback(() => {
     try {
-      // Check if browser supports speech recognition
       if (!('webkitSpeechRecognition' in window)) {
         toast({
           variant: "destructive",
@@ -57,36 +74,60 @@ export const VoiceInput = ({ onVoiceInput }: VoiceInputProps) => {
         return;
       }
 
-      // Initialize speech recognition
       const SpeechRecognition = window.webkitSpeechRecognition;
-      const newRecognition = new SpeechRecognition();
+      const recognition = new SpeechRecognition();
       
-      newRecognition.continuous = true;
-      newRecognition.interimResults = true;
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US'; // Set language explicitly
+      recognition.maxAlternatives = 3; // Get multiple alternatives for better accuracy
       
-      newRecognition.onresult = (event) => {
-        const transcript = Array.from(event.results)
-          .map(result => result[0].transcript)
-          .join(' ');
-          
-        if (event.results[event.results.length - 1].isFinal) {
-          onVoiceInput(transcript);
+      recognition.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const result = event.results[i];
+          if (result.isFinal) {
+            // Get the most confident result
+            const mostConfidentResult = Array.from(result)
+              .reduce((prev, current) => 
+                current.confidence > prev.confidence ? current : prev
+              );
+            
+            finalTranscript += mostConfidentResult.transcript + ' ';
+            transcriptRef.current = finalTranscript;
+            onVoiceInput(finalTranscript.trim());
+          } else {
+            interimTranscript += result[0].transcript;
+          }
         }
       };
 
-      newRecognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Error recording voice. Please try again.",
+          description: `Error recording voice: ${event.message}. Please try again.`,
         });
         stopRecording();
       };
 
-      newRecognition.start();
-      setRecognition(newRecognition);
+      recognition.onend = () => {
+        // If we still have a transcript when the recognition ends,
+        // make sure it's sent to the parent component
+        if (transcriptRef.current) {
+          onVoiceInput(transcriptRef.current.trim());
+          transcriptRef.current = "";
+        }
+        setIsRecording(false);
+      };
+
+      recognition.start();
+      recognitionRef.current = recognition;
       setIsRecording(true);
+      transcriptRef.current = ""; // Reset transcript
       
       toast({
         title: "Recording started",
@@ -100,19 +141,7 @@ export const VoiceInput = ({ onVoiceInput }: VoiceInputProps) => {
         description: "Failed to start recording. Please try again.",
       });
     }
-  }, [onVoiceInput, toast]);
-
-  const stopRecording = useCallback(() => {
-    if (recognition) {
-      recognition.stop();
-      setRecognition(null);
-      setIsRecording(false);
-      toast({
-        title: "Recording stopped",
-        description: "Voice input has been processed.",
-      });
-    }
-  }, [recognition, toast]);
+  }, [onVoiceInput, stopRecording, toast]);
 
   return (
     <Button 
