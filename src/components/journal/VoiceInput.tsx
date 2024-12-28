@@ -83,25 +83,14 @@ export const VoiceInput = ({ onVoiceInput }: VoiceInputProps) => {
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
-      recognition.maxAlternatives = 3;
       
       recognition.onresult = (event: SpeechRecognitionEvent) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
-        
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-          const result = event.results[i];
-          if (result[0].isFinal) {
-            const alternatives = Array.from(result) as SpeechRecognitionResult[];
-            const mostConfidentResult = alternatives.reduce((prev, current) => 
-              current.confidence > prev.confidence ? current : prev
-            );
-            
-            finalTranscript += mostConfidentResult.transcript + ' ';
-            transcriptRef.current = finalTranscript;
-            onVoiceInput(finalTranscript.trim());
-          } else {
-            interimTranscript += result[0].transcript;
+          const result = event.results[i][0];
+          if (result.isFinal) {
+            const transcript = result.transcript;
+            transcriptRef.current = transcript;
+            onVoiceInput(transcript.trim());
           }
         }
       };
