@@ -25,7 +25,7 @@ serve(async (req) => {
     const { message } = await req.json();
     console.log('Received message:', message);
 
-    // Create a thread
+    // Create a thread with explicit v2 configuration
     const thread = await openai.beta.threads.create();
     console.log('Created thread:', thread.id);
 
@@ -35,19 +35,24 @@ serve(async (req) => {
       content: message,
     });
 
-    // Run the assistant
+    // Run the assistant with v2 configuration
     const run = await openai.beta.threads.runs.create(thread.id, {
       assistant_id: 'asst_ZnAY2Kd3gCEcRtMkAJnN2ON4',
+      model: "gpt-4-turbo-preview", // Explicitly set the model
     });
 
     // Poll for the run completion
     let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+    console.log('Initial run status:', runStatus.status);
+    
     while (runStatus.status !== "completed") {
       if (runStatus.status === "failed") {
+        console.error('Run failed:', runStatus);
         throw new Error("Assistant run failed");
       }
       await new Promise(resolve => setTimeout(resolve, 1000));
       runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+      console.log('Updated run status:', runStatus.status);
     }
 
     // Get the assistant's response
@@ -57,6 +62,7 @@ serve(async (req) => {
       .pop();
 
     if (!lastMessage) {
+      console.error('No response from assistant');
       throw new Error("No response from assistant");
     }
 
