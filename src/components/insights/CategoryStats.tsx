@@ -1,6 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { CategoryEntries } from "./CategoryEntries";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface CategoryStat {
   category: string;
@@ -8,6 +11,8 @@ interface CategoryStat {
 }
 
 export const CategoryStats = () => {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
   const { data: categoryStats } = useQuery({
     queryKey: ['categoryStats'],
     queryFn: async () => {
@@ -36,14 +41,31 @@ export const CategoryStats = () => {
   });
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {categoryStats?.map((stat) => (
-        <Card key={stat.category} className="p-6 space-y-4">
-          <h2 className="text-xl font-semibold">{stat.category}</h2>
-          <p className="text-3xl font-bold">{stat.count}</p>
-          <p className="text-sm text-gray-500">entries in this category</p>
-        </Card>
-      ))}
-    </div>
+    <>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {categoryStats?.map((stat) => (
+          <Card 
+            key={stat.category} 
+            className="p-6 space-y-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            onClick={() => setSelectedCategory(stat.category)}
+          >
+            <h2 className="text-xl font-semibold">{stat.category}</h2>
+            <p className="text-3xl font-bold">{stat.count}</p>
+            <p className="text-sm text-gray-500">entries in this category</p>
+          </Card>
+        ))}
+      </div>
+
+      <Dialog open={!!selectedCategory} onOpenChange={(open) => !open && setSelectedCategory(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          {selectedCategory && (
+            <CategoryEntries 
+              category={selectedCategory} 
+              onClose={() => setSelectedCategory(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
