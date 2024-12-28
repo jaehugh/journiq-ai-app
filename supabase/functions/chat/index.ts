@@ -3,7 +3,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import OpenAI from "https://deno.land/x/openai@v4.24.0/mod.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const openai = new OpenAI({ apiKey: openAIApiKey });
+const openai = new OpenAI({ 
+  apiKey: openAIApiKey,
+  defaultHeaders: {
+    'OpenAI-Beta': 'assistants=v2'
+  }
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
