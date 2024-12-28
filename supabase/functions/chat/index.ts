@@ -31,6 +31,16 @@ serve(async (req) => {
     const { message } = await req.json();
     console.log('Received message:', message);
 
+    if (!message) {
+      return new Response(
+        JSON.stringify({ error: 'Message is required' }), 
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     // Create a thread with explicit v2 configuration
     const thread = await openai.beta.threads.create();
     console.log('Created thread:', thread.id);
@@ -54,8 +64,26 @@ serve(async (req) => {
     while (runStatus.status !== "completed") {
       if (runStatus.status === "failed") {
         console.error('Run failed:', runStatus);
-        throw new Error("Assistant run failed");
+        return new Response(
+          JSON.stringify({ error: "Assistant run failed" }), 
+          { 
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
+      
+      if (runStatus.status === "expired") {
+        console.error('Run expired:', runStatus);
+        return new Response(
+          JSON.stringify({ error: "Assistant run expired" }), 
+          { 
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
       console.log('Updated run status:', runStatus.status);
@@ -68,8 +96,13 @@ serve(async (req) => {
       .pop();
 
     if (!lastMessage) {
-      console.error('No response from assistant');
-      throw new Error("No response from assistant");
+      return new Response(
+        JSON.stringify({ error: "No response from assistant" }), 
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     console.log('Assistant response:', lastMessage.content[0].text.value);
@@ -79,18 +112,24 @@ serve(async (req) => {
       thread_id: thread.id,
     };
 
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify(response), 
+      {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   } catch (error) {
     console.error('Error in chat function:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message,
         details: error.toString()
-      }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      }), 
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
 });
