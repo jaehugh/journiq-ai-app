@@ -1,42 +1,32 @@
-import { Card } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { SubscriptionTier } from "@/components/profile/SubscriptionTier";
-import { ProfileActions } from "@/components/profile/ProfileActions";
+import { Button } from "@/components/ui/button";
 import { UserHeader } from "@/components/profile/UserHeader";
+import { ProfileActions } from "@/components/profile/ProfileActions";
 import { SubscriptionPlans } from "@/components/profile/SubscriptionPlans";
 import { useProfile } from "@/hooks/use-profile";
+import { MessageSquareText } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const Profile = () => {
-  const { toast } = useToast();
-  const { subscription, isLoading, handleUpgrade, handleLogout } = useProfile();
+  const { profile, isLoading } = useProfile();
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
-    <div className="space-y-8 max-w-3xl mx-auto">
-      <header className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
-        <p className="text-gray-500">Manage your account and subscription.</p>
-      </header>
+    <div className="space-y-6">
+      <UserHeader profile={profile} />
+      <ProfileActions />
+      <SubscriptionPlans />
       
-      <Card className="p-6">
-        <UserHeader 
-          email={subscription?.email}
-          tier={subscription?.tier}
-          isLoading={isLoading}
-        />
-
-        <div className="space-y-6">
-          <SubscriptionPlans 
-            currentTier={subscription?.tier}
-            onUpgrade={handleUpgrade}
-          />
-          <ProfileActions 
-            onLogout={handleLogout}
-            currentTier={subscription?.tier}
-          />
-        </div>
-      </Card>
+      <div className="mt-6">
+        <Link to="/live-chat">
+          <Button className="w-full flex items-center gap-2">
+            <MessageSquareText className="w-4 h-4" />
+            Live Chat Support
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 };

@@ -11,6 +11,7 @@ import { Login } from "@/pages/Login";
 import { AccountSettings } from "@/pages/AccountSettings";
 import { CustomCategories } from "@/pages/CustomCategories";
 import { PrivacySettings } from "@/pages/PrivacySettings";
+import { LiveChat } from "@/pages/LiveChat";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -42,6 +43,18 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const App = () => {
+  useEffect(() => {
+    // Initialize ManyChat widget
+    const script = document.createElement('script');
+    script.src = 'https://widget.manychat.com/embed.js';
+    script.async = true;
+    document.body.appendChild(script);
+    
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -63,6 +76,7 @@ const App = () => {
             <Route path="account-settings" element={<AccountSettings />} />
             <Route path="custom-categories" element={<CustomCategories />} />
             <Route path="privacy-settings" element={<PrivacySettings />} />
+            <Route path="live-chat" element={<LiveChat />} />
           </Route>
         </Routes>
       </BrowserRouter>
