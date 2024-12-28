@@ -33,11 +33,18 @@ export const LiveChat = () => {
         body: { message },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
-          'OpenAI-Beta': 'assistants=v2'  // Add this header to ensure v2 is used
+          'OpenAI-Beta': 'assistants=v2'
         },
       });
 
-      if (response.error) throw response.error;
+      if (response.error) {
+        console.error('Supabase function error:', response.error);
+        throw new Error(response.error.message || 'Failed to get response from chat');
+      }
+
+      if (!response.data) {
+        throw new Error('No data received from chat function');
+      }
 
       setMessages(prev => [...prev, { 
         role: 'assistant', 
@@ -47,7 +54,7 @@ export const LiveChat = () => {
       console.error('Chat error:', error);
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to send message. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -100,7 +107,7 @@ export const LiveChat = () => {
               disabled={isLoading}
             />
             <Button type="submit" disabled={isLoading}>
-              Send
+              {isLoading ? 'Sending...' : 'Send'}
             </Button>
           </form>
         </div>

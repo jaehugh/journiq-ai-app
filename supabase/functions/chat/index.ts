@@ -12,16 +12,22 @@ const openai = new OpenAI({
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, openai-beta',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 };
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: corsHeaders,
+      status: 204
+    });
   }
 
   try {
+    console.log('Received request:', req.method);
     const { message } = await req.json();
     console.log('Received message:', message);
 
@@ -38,7 +44,7 @@ serve(async (req) => {
     // Run the assistant with v2 configuration
     const run = await openai.beta.threads.runs.create(thread.id, {
       assistant_id: 'asst_ZnAY2Kd3gCEcRtMkAJnN2ON4',
-      model: "gpt-4-turbo-preview", // Explicitly set the model
+      model: "gpt-4-turbo-preview",
     });
 
     // Poll for the run completion
@@ -78,7 +84,11 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error in chat function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        details: error.toString()
+      }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
