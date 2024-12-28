@@ -23,9 +23,12 @@ serve(async (req) => {
 
   try {
     const { message, assistant_id } = await req.json();
+    console.log('Received message:', message);
+    console.log('Assistant ID:', assistant_id);
 
     // Create a thread
     const thread = await openai.beta.threads.create();
+    console.log('Created thread:', thread.id);
 
     // Add the user's message to the thread
     await openai.beta.threads.messages.create(thread.id, {
@@ -57,6 +60,8 @@ serve(async (req) => {
     if (!lastMessage) {
       throw new Error("No response from assistant");
     }
+
+    console.log('Assistant response:', lastMessage.content[0].text.value);
 
     const response = {
       message: lastMessage.content[0].text.value,
