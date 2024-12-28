@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import type { Profile } from "@/integrations/supabase/types";
+import type { Database } from "@/integrations/supabase/types";
+
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 export const useProfileData = () => {
   const { toast } = useToast();
@@ -20,7 +22,7 @@ export const useProfileData = () => {
         .maybeSingle();
 
       if (error) throw error;
-      return data as Profile['Row'] | null;
+      return data as Profile | null;
     },
   });
 
