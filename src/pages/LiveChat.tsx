@@ -33,6 +33,7 @@ export const LiveChat = () => {
         body: { message },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
+          'OpenAI-Beta': 'assistants=v2'  // Add this header to ensure v2 is used
         },
       });
 
