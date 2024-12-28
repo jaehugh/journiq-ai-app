@@ -26,16 +26,19 @@ interface SpeechRecognition extends EventTarget {
   abort: () => void;
 }
 
+interface SpeechRecognitionResult {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognitionAlternative extends SpeechRecognitionResult {
+  readonly isFinal: boolean;
+}
+
 interface SpeechRecognitionEvent {
-  results: {
-    [index: number]: {
-      [index: number]: {
-        transcript: string;
-        confidence: number;
-      };
-    } & {
-      isFinal: boolean;
-    };
+  readonly resultIndex: number;
+  readonly results: {
+    [index: number]: SpeechRecognitionAlternative[];
     length: number;
   };
 }
@@ -79,21 +82,20 @@ export const VoiceInput = ({ onVoiceInput }: VoiceInputProps) => {
       
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US'; // Set language explicitly
-      recognition.maxAlternatives = 3; // Get multiple alternatives for better accuracy
+      recognition.lang = 'en-US';
+      recognition.maxAlternatives = 3;
       
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         let finalTranscript = '';
         let interimTranscript = '';
         
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           const result = event.results[i];
-          if (result.isFinal) {
-            // Get the most confident result
-            const mostConfidentResult = Array.from(result)
-              .reduce((prev, current) => 
-                current.confidence > prev.confidence ? current : prev
-              );
+          if (result[0].isFinal) {
+            const alternatives = Array.from(result) as SpeechRecognitionResult[];
+            const mostConfidentResult = alternatives.reduce((prev, current) => 
+              current.confidence > prev.confidence ? current : prev
+            );
             
             finalTranscript += mostConfidentResult.transcript + ' ';
             transcriptRef.current = finalTranscript;
@@ -115,8 +117,6 @@ export const VoiceInput = ({ onVoiceInput }: VoiceInputProps) => {
       };
 
       recognition.onend = () => {
-        // If we still have a transcript when the recognition ends,
-        // make sure it's sent to the parent component
         if (transcriptRef.current) {
           onVoiceInput(transcriptRef.current.trim());
           transcriptRef.current = "";
@@ -127,7 +127,7 @@ export const VoiceInput = ({ onVoiceInput }: VoiceInputProps) => {
       recognition.start();
       recognitionRef.current = recognition;
       setIsRecording(true);
-      transcriptRef.current = ""; // Reset transcript
+      transcriptRef.current = "";
       
       toast({
         title: "Recording started",
