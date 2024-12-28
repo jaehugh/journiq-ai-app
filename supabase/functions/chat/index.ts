@@ -27,11 +27,14 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Received request:', req.method);
+    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
+    console.log('Request method:', req.method);
+    
     const { message } = await req.json();
     console.log('Received message:', message);
 
     if (!message) {
+      console.error('No message provided in request');
       return new Response(
         JSON.stringify({ error: 'Message is required' }), 
         { 
@@ -42,30 +45,40 @@ serve(async (req) => {
     }
 
     // Create a thread with explicit v2 configuration
+    console.log('Creating thread with OpenAI...');
     const thread = await openai.beta.threads.create();
     console.log('Created thread:', thread.id);
 
     // Add the user's message to the thread
+    console.log('Adding message to thread...');
     await openai.beta.threads.messages.create(thread.id, {
       role: "user",
       content: message,
     });
 
     // Run the assistant with v2 configuration
+    console.log('Starting assistant run...');
     const run = await openai.beta.threads.runs.create(thread.id, {
       assistant_id: 'asst_ZnAY2Kd3gCEcRtMkAJnN2ON4',
       model: "gpt-4-turbo-preview",
     });
+    console.log('Created run:', run.id);
 
     // Poll for the run completion
     let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
     console.log('Initial run status:', runStatus.status);
     
-    while (runStatus.status !== "completed") {
+    let attempts = 0;
+    const maxAttempts = 30; // 30 seconds timeout
+    
+    while (runStatus.status !== "completed" && attempts < maxAttempts) {
       if (runStatus.status === "failed") {
         console.error('Run failed:', runStatus);
         return new Response(
-          JSON.stringify({ error: "Assistant run failed" }), 
+          JSON.stringify({ 
+            error: "Assistant run failed",
+            details: runStatus
+          }), 
           { 
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -76,7 +89,10 @@ serve(async (req) => {
       if (runStatus.status === "expired") {
         console.error('Run expired:', runStatus);
         return new Response(
-          JSON.stringify({ error: "Assistant run expired" }), 
+          JSON.stringify({ 
+            error: "Assistant run expired",
+            details: runStatus
+          }), 
           { 
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -87,17 +103,37 @@ serve(async (req) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
       console.log('Updated run status:', runStatus.status);
+      attempts++;
+    }
+
+    if (attempts >= maxAttempts) {
+      console.error('Run timed out after 30 seconds');
+      return new Response(
+        JSON.stringify({ 
+          error: "Assistant run timed out",
+          details: runStatus
+        }), 
+        { 
+          status: 504,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Get the assistant's response
+    console.log('Retrieving messages...');
     const messages = await openai.beta.threads.messages.list(thread.id);
     const lastMessage = messages.data
       .filter(msg => msg.role === "assistant")
       .pop();
 
     if (!lastMessage) {
+      console.error('No response message found from assistant');
       return new Response(
-        JSON.stringify({ error: "No response from assistant" }), 
+        JSON.stringify({ 
+          error: "No response from assistant",
+          details: messages
+        }), 
         { 
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -124,7 +160,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        details: error.toString()
+        details: error.toString(),
+        stack: error.stack
       }), 
       {
         status: 500,
