@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, X } from "lucide-react";
+import { BackButton } from "@/components/ui/back-button";
 
 export const CustomCategories = () => {
   const [categories, setCategories] = useState<string[]>([]);
@@ -38,6 +39,7 @@ export const CustomCategories = () => {
 
   return (
     <div className="max-w-3xl mx-auto p-6">
+      <BackButton />
       <h1 className="text-3xl font-bold mb-6">Custom Categories</h1>
       <Card className="p-6">
         <div className="flex space-x-4 mb-6">

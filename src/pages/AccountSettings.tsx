@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfileData } from "@/hooks/use-profile-data";
 import { useProfile } from "@/hooks/use-profile";
+import { BackButton } from "@/components/ui/back-button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -229,6 +230,7 @@ export const AccountSettings = () => {
 
   return (
     <div className="max-w-3xl mx-auto p-6">
+      <BackButton />
       <h1 className="text-3xl font-bold mb-6">Account Settings</h1>
       
       <div className="space-y-6">
