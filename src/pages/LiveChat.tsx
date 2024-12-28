@@ -30,10 +30,7 @@ export const LiveChat = () => {
       if (!session?.access_token) throw new Error('No access token available');
 
       const response = await supabase.functions.invoke('chat', {
-        body: { 
-          message,
-          assistant_id: 'asst_ZnAY2Kd3gCEcRtMkAJnN2ON4'
-        },
+        body: { message },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },

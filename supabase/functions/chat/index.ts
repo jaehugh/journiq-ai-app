@@ -22,9 +22,8 @@ serve(async (req) => {
   }
 
   try {
-    const { message, assistant_id } = await req.json();
+    const { message } = await req.json();
     console.log('Received message:', message);
-    console.log('Assistant ID:', assistant_id);
 
     // Create a thread
     const thread = await openai.beta.threads.create();
@@ -38,7 +37,7 @@ serve(async (req) => {
 
     // Run the assistant
     const run = await openai.beta.threads.runs.create(thread.id, {
-      assistant_id: assistant_id,
+      assistant_id: 'asst_ZnAY2Kd3gCEcRtMkAJnN2ON4',
     });
 
     // Poll for the run completion
