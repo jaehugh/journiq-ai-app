@@ -8,18 +8,24 @@ export const useProfile = () => {
   const { data: subscription, isLoading } = useQuery({
     queryKey: ["subscription"],
     queryFn: async () => {
+      console.log("Fetching subscription data...");
       const response = await fetch("/functions/v1/check-subscription", {
         headers: {
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
         },
       });
-      if (!response.ok) throw new Error("Failed to fetch subscription status");
-      return response.json();
+      if (!response.ok) {
+        console.error("Subscription fetch error:", response.statusText);
+        throw new Error("Failed to fetch subscription status");
+      }
+      const data = await response.json();
+      console.log("Subscription data received:", data);
+      return data;
     },
     staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
-    gcTime: 1000 * 60 * 30, // Keep data in cache for 30 minutes (formerly cacheTime)
-    refetchOnWindowFocus: false, // Don't refetch when window regains focus
-    refetchOnMount: false, // Don't refetch on component mount if data exists
+    gcTime: 1000 * 60 * 30, // Keep data in cache for 30 minutes
+    retry: 3, // Retry failed requests 3 times
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 
   const handleUpgrade = async (priceId: string) => {
