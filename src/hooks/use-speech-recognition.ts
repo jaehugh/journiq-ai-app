@@ -1,6 +1,45 @@
 import { useCallback, useRef, useState } from "react";
 import { useToast } from "./use-toast";
 
+// Define types for the Web Speech API
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+interface SpeechRecognitionResultList {
+  [index: number]: SpeechRecognitionResult;
+  length: number;
+}
+
+interface SpeechRecognitionResult {
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+  length: number;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: Event) => void;
+  onend: () => void;
+  start: () => void;
+  stop: () => void;
+}
+
+declare global {
+  interface Window {
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
+
 interface UseSpeechRecognitionProps {
   onTranscriptionComplete: (text: string) => void;
 }
@@ -44,7 +83,7 @@ export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecog
       const recognition = new SpeechRecognition();
       
       recognition.continuous = true;
-      recognition.interimResults = false; // Changed to false to only get final results
+      recognition.interimResults = false;
       recognition.lang = 'en-US';
       
       recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -60,7 +99,7 @@ export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecog
         toast({
           variant: "destructive",
           title: "Error",
-          description: `Error recording voice: ${event.message}. Please try again.`,
+          description: `Error recording voice: Please try again.`,
         });
         stopRecording();
       };
