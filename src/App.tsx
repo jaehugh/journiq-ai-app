@@ -43,18 +43,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const App = () => {
-  useEffect(() => {
-    // Initialize ManyChat widget
-    const script = document.createElement('script');
-    script.src = 'https://widget.manychat.com/embed.js';
-    script.async = true;
-    document.body.appendChild(script);
-    
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>

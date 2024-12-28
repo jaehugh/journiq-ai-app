@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Settings, Lock, MessageSquare, Tag, LogOut } from "lucide-react";
+import { Settings, Lock, Tag, LogOut } from "lucide-react";
 import { PremiumTag } from "@/components/ui/premium-tag";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -26,19 +26,6 @@ export const ProfileActions = ({ onLogout, currentTier }: ProfileActionsProps) =
     navigate("/custom-categories");
   };
 
-  const handleLiveSupport = () => {
-    if (currentTier !== 'pro') {
-      toast({
-        title: "Pro Feature",
-        description: "Upgrade to Pro to access live support",
-        variant: "default",
-      });
-      return;
-    }
-    // Redirect to ManyChat
-    window.location.href = `https://manychat.com/chat?api=${encodeURIComponent("517879698071565:8d0cc16cd1b0d8ddb986bc66a39060f5")}`;
-  };
-
   return (
     <div className="space-y-4">
       <Button 
@@ -61,21 +48,6 @@ export const ProfileActions = ({ onLogout, currentTier }: ProfileActionsProps) =
         {isBasic && (
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
             <PremiumTag tier="plus" />
-          </div>
-        )}
-      </div>
-      <div className="relative">
-        <Button 
-          variant="outline" 
-          className="w-full justify-start"
-          onClick={handleLiveSupport}
-        >
-          <MessageSquare className="w-4 h-4 mr-2" />
-          Live Support
-        </Button>
-        {currentTier !== 'pro' && (
-          <div className="absolute right-2 top-1/2 -translate-y-1/2">
-            <PremiumTag tier="pro" />
           </div>
         )}
       </div>
