@@ -104,6 +104,9 @@ export const EntryDialog = ({ entry, open, onOpenChange, onEntryUpdated }: Entry
         title: "Success",
         description: "Entry deleted successfully",
       });
+      
+      // Clean up all states and close both dialogs
+      setShowDeleteDialog(false);
       onEntryUpdated();
       onOpenChange(false);
     } catch (error) {
@@ -121,7 +124,13 @@ export const EntryDialog = ({ entry, open, onOpenChange, onEntryUpdated }: Entry
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={(newOpen) => {
+        // Ensure delete dialog is closed when main dialog is closed
+        if (!newOpen) {
+          setShowDeleteDialog(false);
+        }
+        onOpenChange(newOpen);
+      }}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Entry</DialogTitle>
