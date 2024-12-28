@@ -1,22 +1,10 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteEntryDialog } from "./DeleteEntryDialog";
+import { EntryForm } from "./EntryForm";
 
 type JournalEntry = Tables<"journal_entries">;
 
@@ -26,16 +14,6 @@ interface EntryDialogProps {
   onOpenChange: (open: boolean) => void;
   onEntryUpdated: () => void;
 }
-
-const CATEGORIES = [
-  "Personal",
-  "Business",
-  "Goals",
-  "Reflection",
-  "Ideas",
-  "Learning",
-  "Other"
-];
 
 export const EntryDialog = ({ entry, open, onOpenChange, onEntryUpdated }: EntryDialogProps) => {
   const [title, setTitle] = useState(entry.title);
@@ -49,7 +27,6 @@ export const EntryDialog = ({ entry, open, onOpenChange, onEntryUpdated }: Entry
     try {
       setIsLoading(true);
 
-      // Get user's subscription tier
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
@@ -59,7 +36,6 @@ export const EntryDialog = ({ entry, open, onOpenChange, onEntryUpdated }: Entry
         .eq('user_id', user.id)
         .single();
 
-      // For pro users, get AI-generated metadata
       if (subscription?.tier === 'pro' || subscription?.tier === 'plus') {
         const { data: aiData, error: aiError } = await supabase.functions.invoke('auto-tag-entry', {
           body: { 
@@ -83,7 +59,6 @@ export const EntryDialog = ({ entry, open, onOpenChange, onEntryUpdated }: Entry
 
         if (error) throw error;
       } else {
-        // For basic users, just update the entry without AI processing
         const { error } = await supabase
           .from("journal_entries")
           .update({
@@ -151,77 +126,27 @@ export const EntryDialog = ({ entry, open, onOpenChange, onEntryUpdated }: Entry
           <DialogHeader>
             <DialogTitle>Edit Entry</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Input
-                placeholder="Entry title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-gray-800">
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat} className="cursor-pointer">
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Textarea
-                placeholder="Write your entry..."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="min-h-[200px]"
-              />
-            </div>
-            <div className="flex justify-between">
-              <Button
-                variant="destructive"
-                onClick={() => setShowDeleteDialog(true)}
-                disabled={isLoading}
-              >
-                Delete Entry
-              </Button>
-              <div className="space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                  disabled={isLoading}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={handleUpdate} disabled={isLoading}>
-                  Save Changes
-                </Button>
-              </div>
-            </div>
-          </div>
+          <EntryForm
+            title={title}
+            content={content}
+            category={category}
+            onTitleChange={setTitle}
+            onContentChange={setContent}
+            onCategoryChange={setCategory}
+            onCancel={() => onOpenChange(false)}
+            onSave={handleUpdate}
+            onDelete={() => setShowDeleteDialog(true)}
+            isLoading={isLoading}
+          />
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your journal entry.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteEntryDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirmDelete={handleDelete}
+        isLoading={isLoading}
+      />
     </>
   );
 };
