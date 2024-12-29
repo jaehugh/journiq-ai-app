@@ -44,7 +44,7 @@ serve(async (req) => {
       );
     }
 
-    // Create a thread with explicit v2 configuration
+    // Create a thread
     console.log('Creating thread with OpenAI...');
     const thread = await openai.beta.threads.create();
     console.log('Created thread:', thread.id);
@@ -56,11 +56,11 @@ serve(async (req) => {
       content: message,
     });
 
-    // Run the assistant with v2 configuration
+    // Run the assistant
     console.log('Starting assistant run...');
     const run = await openai.beta.threads.runs.create(thread.id, {
       assistant_id: 'asst_ZnAY2Kd3gCEcRtMkAJnN2ON4',
-      model: "gpt-4-turbo-preview",
+      model: "gpt-4o-mini",
     });
     console.log('Created run:', run.id);
 
