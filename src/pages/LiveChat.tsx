@@ -18,29 +18,47 @@ export const LiveChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isConnected, setIsConnected] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
 
   const createTestUser = async () => {
+    if (isCreatingUser) return;
+
     try {
+      setIsCreatingUser(true);
       console.log("Creating test user...");
+      
+      const email = `test-${Date.now()}@example.com`;
+      const password = 'testpassword123';
+      
       const { data, error } = await supabase.auth.signUp({
-        email: `test-${Date.now()}@example.com`,
-        password: 'testpassword123',
+        email,
+        password,
+        options: {
+          data: {
+            display_name: `Test User ${Date.now()}`,
+          },
+        },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error creating test user:", error);
+        throw error;
+      }
 
       console.log("Test user created:", data);
       toast({
         title: "Test User Created",
-        description: "Check the job_logs table and email function logs for the welcome email trigger.",
+        description: `Created user with email: ${email}. Check the job_logs table for the welcome email trigger.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating test user:", error);
       toast({
         title: "Error",
-        description: "Failed to create test user. Check console for details.",
+        description: error.message || "Failed to create test user. Check console for details.",
         variant: "destructive",
       });
+    } finally {
+      setIsCreatingUser(false);
     }
   };
 
@@ -92,12 +110,13 @@ export const LiveChat = () => {
   return (
     <div className="container mx-auto p-4">
       <div className="mb-4">
-        <button
+        <Button
           onClick={createTestUser}
+          disabled={isCreatingUser}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
         >
-          Create Test User
-        </button>
+          {isCreatingUser ? "Creating..." : "Create Test User"}
+        </Button>
       </div>
       
       <Card className="w-full max-w-2xl mx-auto">
