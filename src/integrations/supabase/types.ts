@@ -60,30 +60,6 @@ export type Database = {
         }
         Relationships: []
       }
-      job_logs: {
-        Row: {
-          executed_at: string
-          id: string
-          job_name: string
-          response: Json | null
-          status: string | null
-        }
-        Insert: {
-          executed_at?: string
-          id?: string
-          job_name: string
-          response?: Json | null
-          status?: string | null
-        }
-        Update: {
-          executed_at?: string
-          id?: string
-          job_name?: string
-          response?: Json | null
-          status?: string | null
-        }
-        Relationships: []
-      }
       journal_entries: {
         Row: {
           category: string | null
@@ -167,13 +143,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      log_cron_execution: {
-        Args: {
-          job_name: string
-          response: Json
-        }
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

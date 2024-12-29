@@ -1,110 +1,87 @@
+import { Card } from "@/components/ui/card";
+import { BackButton } from "@/components/ui/back-button";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect, useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChatInput } from "@/components/chat/ChatInput";
+import { ChatMessages } from "@/components/chat/ChatMessages";
 
-type Message = {
-  id: string;
+interface Message {
+  role: 'user' | 'assistant';
   content: string;
-  sender: string;
-  timestamp: string;
-};
+}
 
 export const LiveChat = () => {
-  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [isConnected, setIsConnected] = useState(false);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    const channel = supabase.channel('chat');
+  const sendMessage = async (message: string) => {
+    if (!message.trim()) return;
 
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        setIsConnected(true);
-      })
-      .on('broadcast', { event: 'message' }, ({ payload }) => {
-        setMessages((prev) => [...prev, payload as Message]);
-      })
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, []);
-
-  const sendMessage = async () => {
-    if (!newMessage.trim()) return;
-
-    const message: Message = {
-      id: crypto.randomUUID(),
-      content: newMessage,
-      sender: 'user',
-      timestamp: new Date().toISOString(),
-    };
+    setIsLoading(true);
+    setMessages(prev => [...prev, { role: 'user', content: message }]);
+    setInput('');
 
     try {
-      await supabase.channel('chat').send({
-        type: 'broadcast',
-        event: 'message',
-        payload: message,
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No access token available');
+
+      const response = await supabase.functions.invoke('chat', {
+        body: { message },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'OpenAI-Beta': 'assistants=v2'
+        },
       });
 
-      setNewMessage("");
+      if (response.error) {
+        console.error('Supabase function error:', response.error);
+        throw new Error(response.error.message || 'Failed to get response from chat');
+      }
+
+      if (!response.data) {
+        throw new Error('No data received from chat function');
+      }
+
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: response.data.message 
+      }]);
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Chat error:', error);
       toast({
         title: "Error",
-        description: "Failed to send message",
+        description: error instanceof Error ? error.message : "Failed to send message. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendMessage(input);
+  };
+
   return (
-    <div className="container mx-auto p-4">      
-      <Card className="w-full max-w-2xl mx-auto">
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">Live Chat</h2>
-            <span className={`px-2 py-1 rounded text-sm ${
-              isConnected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-            }`}>
-              {isConnected ? 'Connected' : 'Disconnected'}
-            </span>
-          </div>
-
-          <ScrollArea className="h-[400px] mb-4 p-4 border rounded-md">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`mb-2 p-2 rounded ${
-                  message.sender === 'user'
-                    ? 'bg-blue-100 ml-auto'
-                    : 'bg-gray-100'
-                } max-w-[80%]`}
-              >
-                <p className="text-sm">{message.content}</p>
-                <span className="text-xs text-gray-500">
-                  {new Date(message.timestamp).toLocaleTimeString()}
-                </span>
-              </div>
-            ))}
-          </ScrollArea>
-
-          <div className="flex gap-2">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-              placeholder="Type your message..."
-              className="flex-1"
-            />
-            <Button onClick={sendMessage}>Send</Button>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center">
+        <BackButton />
+        <h1 className="text-2xl font-bold ml-4">Live Chat Support</h1>
+      </div>
+      
+      <Card className="p-6">
+        <div className="flex flex-col h-[600px]">
+          <ChatMessages messages={messages} />
+          <ChatInput 
+            input={input}
+            isLoading={isLoading}
+            onInputChange={setInput}
+            onSubmit={handleSubmit}
+          />
         </div>
       </Card>
     </div>

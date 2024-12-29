@@ -1,4 +1,4 @@
 project_id = "rlwtvnffwscsbtlzjeqe"
 
-[sync-all-users]
+[upload-profile-image]
 verify_jwt = true
