@@ -1,7 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { BackButton } from "@/components/ui/back-button";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ChatMessages } from "@/components/chat/ChatMessages";
@@ -10,6 +9,8 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
+
+const WEBHOOK_URL = 'https://hook.us1.make.com/koi27k4abowqtr82dgvngk7o26ii6wm6';
 
 export const LiveChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -25,29 +26,27 @@ export const LiveChat = () => {
     setInput('');
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('No access token available');
-
-      const response = await supabase.functions.invoke('chat', {
-        body: { message },
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          'OpenAI-Beta': 'assistants=v2'
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ message }),
       });
 
-      if (response.error) {
-        console.error('Supabase function error:', response.error);
-        throw new Error(response.error.message || 'Failed to get response from chat');
+      if (!response.ok) {
+        throw new Error('Failed to get response from chat service');
       }
 
-      if (!response.data) {
-        throw new Error('No data received from chat function');
+      const data = await response.json();
+      
+      if (!data.message) {
+        throw new Error('Invalid response format from chat service');
       }
 
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: response.data.message 
+        content: data.message 
       }]);
     } catch (error) {
       console.error('Chat error:', error);
