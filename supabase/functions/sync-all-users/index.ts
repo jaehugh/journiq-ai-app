@@ -44,7 +44,7 @@ serve(async (req) => {
       
       userMap.set(user.id, {
         email: user.email,
-        displayName: profile?.display_name || '',
+        fullName: profile?.display_name || '',
         subscriptionTier: subscription?.tier || 'basic',
         createdAt: user.created_at,
         lastSignIn: user.last_sign_in_at,
@@ -63,7 +63,7 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             email: userData.email,
-            first_name: userData.displayName,
+            first_name: userData.fullName,
             data: {
               subscription_tier: userData.subscriptionTier,
             },
@@ -75,7 +75,7 @@ serve(async (req) => {
     });
 
     // Sync with Airtable
-    const airtablePromises = Array.from(userMap.values()).map(async (userData) => {
+    const airtablePromises = Array.from(userMap.entries()).map(async ([userId, userData]) => {
       try {
         await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Users`, {
           method: 'POST',
@@ -86,12 +86,18 @@ serve(async (req) => {
           body: JSON.stringify({
             records: [{
               fields: {
-                'Email': userData.email,
-                'Display Name': userData.displayName,
-                'Subscription Tier': userData.subscriptionTier,
-                'Created At': userData.createdAt,
-                'Last Sign In': userData.lastSignIn,
-                'Avatar URL': userData.avatarUrl,
+                'User ID': userId,
+                'Full Name': userData.fullName,
+                'Email Address': userData.email,
+                'Profile Photo': userData.avatarUrl || '',
+                'Date Joined': userData.createdAt,
+                'Role': userData.subscriptionTier,
+                'Interaction History': '',  // Can be populated if we track interactions
+                'Feedback Given': '',       // Can be populated if we track feedback
+                'Emails Sent': '',          // Can be populated if we track emails
+                'Entrepreneurs': false,      // Default values based on screenshot
+                'Coaches': false,           // These can be updated later
+                'Founders': false,          // based on user categorization
               },
             }],
           }),
