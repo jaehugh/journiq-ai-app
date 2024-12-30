@@ -28,10 +28,15 @@ interface SpeechRecognition extends EventTarget {
   interimResults: boolean;
   lang: string;
   onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: Event) => void;
+  onerror: (event: SpeechRecognitionErrorEvent) => void;
   onend: () => void;
+  onspeechend: (() => void) | null;
   start: () => void;
   stop: () => void;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: 'no-speech' | 'audio-capture' | 'not-allowed' | 'network' | 'aborted' | 'service-not-allowed';
 }
 
 declare global {
@@ -94,7 +99,7 @@ export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecog
         }
       };
 
-      recognition.onerror = (event) => {
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         console.error('Speech recognition error:', event);
         // Only stop recording if it's a fatal error
         if (event.error === 'no-speech' || event.error === 'audio-capture') {
