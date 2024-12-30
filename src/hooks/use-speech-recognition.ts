@@ -1,49 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useToast } from "./use-toast";
-
-// Define types for the Web Speech API
-interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
-  resultIndex: number;
-}
-
-interface SpeechRecognitionResultList {
-  [index: number]: SpeechRecognitionResult;
-  length: number;
-}
-
-interface SpeechRecognitionResult {
-  [index: number]: SpeechRecognitionAlternative;
-  isFinal: boolean;
-  length: number;
-}
-
-interface SpeechRecognitionAlternative {
-  transcript: string;
-  confidence: number;
-}
-
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: SpeechRecognitionErrorEvent) => void;
-  onend: () => void;
-  onspeechend: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  error: 'no-speech' | 'audio-capture' | 'not-allowed' | 'network' | 'aborted' | 'service-not-allowed';
-}
-
-declare global {
-  interface Window {
-    webkitSpeechRecognition: new () => SpeechRecognition;
-  }
-}
+import { handleSpeechError } from "@/utils/speech-recognition-error";
+import type { SpeechRecognition, SpeechRecognitionEvent, SpeechRecognitionErrorEvent } from "@/types/speech-recognition";
 
 interface UseSpeechRecognitionProps {
   onTranscriptionComplete: (text: string) => void;
@@ -52,8 +10,15 @@ interface UseSpeechRecognitionProps {
 export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecognitionProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const { toast } = useToast();
   const transcriptRef = useRef<string>("");
+  const { toast } = useToast();
+
+  const handleTranscriptionComplete = useCallback(() => {
+    if (transcriptRef.current) {
+      onTranscriptionComplete(transcriptRef.current.trim());
+      transcriptRef.current = "";
+    }
+  }, [onTranscriptionComplete]);
 
   const stopRecording = useCallback(() => {
     if (recognitionRef.current) {
@@ -61,17 +26,14 @@ export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecog
       recognitionRef.current = null;
       setIsRecording(false);
       
-      if (transcriptRef.current) {
-        onTranscriptionComplete(transcriptRef.current.trim());
-        transcriptRef.current = "";
-      }
+      handleTranscriptionComplete();
 
       toast({
         title: "Recording complete",
         description: "Your voice input has been processed.",
       });
     }
-  }, [toast, onTranscriptionComplete]);
+  }, [toast, handleTranscriptionComplete]);
 
   const startRecording = useCallback(() => {
     try {
@@ -94,37 +56,30 @@ export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecog
       recognition.onresult = (event: SpeechRecognitionEvent) => {
         const lastResult = event.results[event.results.length - 1];
         if (lastResult.isFinal) {
-          const transcript = lastResult[0].transcript;
-          transcriptRef.current += transcript + " ";
+          transcriptRef.current += lastResult[0].transcript + " ";
         }
       };
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        console.error('Speech recognition error:', event);
-        // Only stop recording if it's a fatal error
-        if (event.error === 'no-speech' || event.error === 'audio-capture') {
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: `Error recording voice: ${event.error}. Please try again.`,
-          });
-          stopRecording();
-        }
+        handleSpeechError(
+          event,
+          (message) => {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: message,
+            });
+          },
+          stopRecording
+        );
       };
 
-      // Remove automatic stopping on silence
       recognition.onspeechend = null;
       recognition.onend = () => {
-        // Only set isRecording to false if we're actually stopping
-        // This prevents the recording from stopping automatically
         if (recognitionRef.current === null) {
           setIsRecording(false);
-          if (transcriptRef.current) {
-            onTranscriptionComplete(transcriptRef.current.trim());
-            transcriptRef.current = "";
-          }
+          handleTranscriptionComplete();
         } else {
-          // If recognition ended but we didn't stop it, restart it
           recognition.start();
         }
       };
