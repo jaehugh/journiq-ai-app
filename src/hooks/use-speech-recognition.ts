@@ -83,7 +83,7 @@ export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecog
       const recognition = new SpeechRecognition();
       
       recognition.continuous = true;
-      recognition.interimResults = false;
+      recognition.interimResults = true;
       recognition.lang = 'en-US';
       
       recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -96,19 +96,31 @@ export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecog
 
       recognition.onerror = (event) => {
         console.error('Speech recognition error:', event);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: `Error recording voice: Please try again.`,
-        });
-        stopRecording();
+        // Only stop recording if it's a fatal error
+        if (event.error === 'no-speech' || event.error === 'audio-capture') {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: `Error recording voice: ${event.error}. Please try again.`,
+          });
+          stopRecording();
+        }
       };
 
+      // Remove automatic stopping on silence
+      recognition.onspeechend = null;
       recognition.onend = () => {
-        setIsRecording(false);
-        if (transcriptRef.current) {
-          onTranscriptionComplete(transcriptRef.current.trim());
-          transcriptRef.current = "";
+        // Only set isRecording to false if we're actually stopping
+        // This prevents the recording from stopping automatically
+        if (recognitionRef.current === null) {
+          setIsRecording(false);
+          if (transcriptRef.current) {
+            onTranscriptionComplete(transcriptRef.current.trim());
+            transcriptRef.current = "";
+          }
+        } else {
+          // If recognition ended but we didn't stop it, restart it
+          recognition.start();
         }
       };
 
