@@ -33,20 +33,20 @@ export const Login = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session) => {
       console.log("Auth state changed:", event);
-      if (event === 'SIGNED_UP') {
+      if (event === AuthChangeEvent.SIGNED_UP) {
         console.log("User signed up successfully");
         toast({
           title: "Success",
           description: "Account created successfully!",
         });
       }
-      if (event === 'SIGNED_IN') {
+      if (event === AuthChangeEvent.SIGNED_IN) {
         console.log("User signed in successfully");
       }
-      if (event === 'USER_DELETED') {
+      if (event === AuthChangeEvent.USER_DELETED) {
         console.log("User deleted");
       }
-      if (event === 'USER_UPDATED') {
+      if (event === AuthChangeEvent.USER_UPDATED) {
         console.log("User updated");
       }
       if (session) {
