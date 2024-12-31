@@ -31,7 +31,7 @@ export const Login = () => {
     checkUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event);
       if (event === 'SIGNED_UP') {
         console.log("User signed up successfully");
