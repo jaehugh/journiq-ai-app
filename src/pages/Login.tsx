@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import type { AuthError, Session } from "@supabase/supabase-js";
+import type { AuthError, Session, AuthChangeEvent } from "@supabase/supabase-js";
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ export const Login = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session: Session | null) => {
+      (event: AuthChangeEvent, session: Session | null) => {
         console.log("Auth state changed:", event);
         
         switch (event) {
