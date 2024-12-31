@@ -14,10 +14,14 @@ export const useProfile = () => {
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
         },
       });
+      
       if (!response.ok) {
-        console.error("Subscription fetch error:", response.statusText);
-        throw new Error("Failed to fetch subscription status");
+        const errorText = await response.text();
+        console.error("Subscription fetch error:", errorText);
+        throw new Error(`Failed to fetch subscription status: ${errorText}`);
       }
+      
+      // Read the response body only once and store it
       const data = await response.json();
       console.log("Subscription data received:", data);
       return data;
