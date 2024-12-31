@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import type { AuthChangeEvent } from "@supabase/supabase-js";
+import type { AuthError, Session } from "@supabase/supabase-js";
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -31,28 +31,34 @@ export const Login = () => {
     checkUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed:", event);
-      if (event === 'SIGNED_UP') {
-        console.log("User signed up successfully");
-        toast({
-          title: "Success",
-          description: "Account created successfully!",
-        });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session: Session | null) => {
+        console.log("Auth state changed:", event);
+        
+        switch (event) {
+          case 'SIGNED_UP':
+            console.log("User signed up successfully");
+            toast({
+              title: "Success",
+              description: "Account created successfully!",
+            });
+            break;
+          case 'SIGNED_IN':
+            console.log("User signed in successfully");
+            break;
+          case 'USER_DELETED':
+            console.log("User deleted");
+            break;
+          case 'USER_UPDATED':
+            console.log("User updated");
+            break;
+        }
+
+        if (session) {
+          navigate("/");
+        }
       }
-      if (event === 'SIGNED_IN') {
-        console.log("User signed in successfully");
-      }
-      if (event === 'USER_DELETED') {
-        console.log("User deleted");
-      }
-      if (event === 'USER_UPDATED') {
-        console.log("User updated");
-      }
-      if (session) {
-        navigate("/");
-      }
-    });
+    );
 
     return () => subscription.unsubscribe();
   }, [navigate, toast]);
