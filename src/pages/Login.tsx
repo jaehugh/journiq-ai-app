@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { AuthChangeEvent } from "@supabase/supabase-js";
+import type { AuthChangeEvent } from "@supabase/supabase-js";
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -33,20 +33,20 @@ export const Login = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session) => {
       console.log("Auth state changed:", event);
-      if (event === AuthChangeEvent.SIGNED_UP) {
+      if (event === 'SIGNED_UP') {
         console.log("User signed up successfully");
         toast({
           title: "Success",
           description: "Account created successfully!",
         });
       }
-      if (event === AuthChangeEvent.SIGNED_IN) {
+      if (event === 'SIGNED_IN') {
         console.log("User signed in successfully");
       }
-      if (event === AuthChangeEvent.USER_DELETED) {
+      if (event === 'USER_DELETED') {
         console.log("User deleted");
       }
-      if (event === AuthChangeEvent.USER_UPDATED) {
+      if (event === 'USER_UPDATED') {
         console.log("User updated");
       }
       if (session) {
