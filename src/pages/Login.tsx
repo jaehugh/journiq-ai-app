@@ -51,6 +51,13 @@ export const Login = () => {
           description: "You have been signed in successfully",
         });
       }
+      if (event === 'USER_DELETED') {
+        toast({
+          title: "Account Deleted",
+          description: "Your account has been deleted",
+          variant: "destructive",
+        });
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -79,14 +86,6 @@ export const Login = () => {
               }
             }}
             providers={[]}
-            onError={(error) => {
-              console.error("Auth error:", error);
-              toast({
-                title: "Authentication Error",
-                description: error.message,
-                variant: "destructive",
-              });
-            }}
           />
         </div>
       </div>
