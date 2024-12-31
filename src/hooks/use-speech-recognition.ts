@@ -1,7 +1,44 @@
 import { useCallback, useRef, useState } from "react";
 import { useToast } from "./use-toast";
-import { handleSpeechError } from "@/utils/speech-recognition-error";
-import type { SpeechRecognition, SpeechRecognitionEvent, SpeechRecognitionErrorEvent } from "@/types/speech-recognition";
+
+// Define types for the Web Speech API
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+interface SpeechRecognitionResultList {
+  [index: number]: SpeechRecognitionResult;
+  length: number;
+}
+
+interface SpeechRecognitionResult {
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+  length: number;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: Event) => void;
+  onend: () => void;
+  start: () => void;
+  stop: () => void;
+}
+
+declare global {
+  interface Window {
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
 
 interface UseSpeechRecognitionProps {
   onTranscriptionComplete: (text: string) => void;
@@ -10,15 +47,8 @@ interface UseSpeechRecognitionProps {
 export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecognitionProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const transcriptRef = useRef<string>("");
   const { toast } = useToast();
-
-  const handleTranscriptionComplete = useCallback(() => {
-    if (transcriptRef.current) {
-      onTranscriptionComplete(transcriptRef.current.trim());
-      transcriptRef.current = "";
-    }
-  }, [onTranscriptionComplete]);
+  const transcriptRef = useRef<string>("");
 
   const stopRecording = useCallback(() => {
     if (recognitionRef.current) {
@@ -26,14 +56,17 @@ export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecog
       recognitionRef.current = null;
       setIsRecording(false);
       
-      handleTranscriptionComplete();
+      if (transcriptRef.current) {
+        onTranscriptionComplete(transcriptRef.current.trim());
+        transcriptRef.current = "";
+      }
 
       toast({
         title: "Recording complete",
         description: "Your voice input has been processed.",
       });
     }
-  }, [toast, handleTranscriptionComplete]);
+  }, [toast, onTranscriptionComplete]);
 
   const startRecording = useCallback(() => {
     try {
@@ -50,37 +83,32 @@ export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecog
       const recognition = new SpeechRecognition();
       
       recognition.continuous = true;
-      recognition.interimResults = true;
+      recognition.interimResults = false;
       recognition.lang = 'en-US';
       
       recognition.onresult = (event: SpeechRecognitionEvent) => {
         const lastResult = event.results[event.results.length - 1];
         if (lastResult.isFinal) {
-          transcriptRef.current += lastResult[0].transcript + " ";
+          const transcript = lastResult[0].transcript;
+          transcriptRef.current += transcript + " ";
         }
       };
 
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        handleSpeechError(
-          event,
-          (message) => {
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: message,
-            });
-          },
-          stopRecording
-        );
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: `Error recording voice: Please try again.`,
+        });
+        stopRecording();
       };
 
-      recognition.onspeechend = null;
       recognition.onend = () => {
-        if (recognitionRef.current === null) {
-          setIsRecording(false);
-          handleTranscriptionComplete();
-        } else {
-          recognition.start();
+        setIsRecording(false);
+        if (transcriptRef.current) {
+          onTranscriptionComplete(transcriptRef.current.trim());
+          transcriptRef.current = "";
         }
       };
 
