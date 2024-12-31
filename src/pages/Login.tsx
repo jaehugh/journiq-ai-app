@@ -35,23 +35,18 @@ export const Login = () => {
       (event: AuthChangeEvent, session: Session | null) => {
         console.log("Auth state changed:", event);
         
-        switch (event) {
-          case 'SIGNED_UP':
-            console.log("User signed up successfully");
-            toast({
-              title: "Success",
-              description: "Account created successfully!",
-            });
-            break;
-          case 'SIGNED_IN':
-            console.log("User signed in successfully");
-            break;
-          case 'USER_DELETED':
-            console.log("User deleted");
-            break;
-          case 'USER_UPDATED':
-            console.log("User updated");
-            break;
+        if (event === 'SIGNED_UP') {
+          console.log("User signed up successfully");
+          toast({
+            title: "Success",
+            description: "Account created successfully!",
+          });
+        } else if (event === 'SIGNED_IN') {
+          console.log("User signed in successfully");
+        } else if (event === 'USER_DELETED') {
+          console.log("User deleted");
+        } else if (event === 'USER_UPDATED') {
+          console.log("User updated");
         }
 
         if (session) {
