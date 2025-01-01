@@ -10,6 +10,9 @@ export const Login = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Log the current URL to help with debugging
+    console.log("Current application URL:", window.location.origin);
+    
     // Check if user is already logged in
     const checkUser = async () => {
       try {
@@ -24,6 +27,7 @@ export const Login = () => {
           return;
         }
         if (session) {
+          console.log("User already has a session, redirecting to home");
           navigate("/");
         }
       } catch (err) {
