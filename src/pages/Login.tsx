@@ -10,8 +10,10 @@ export const Login = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Log the current URL to help with debugging
-    console.log("Current application URL:", window.location.origin);
+    // Enhanced URL logging
+    const currentUrl = window.location.origin;
+    console.log("Current application URL:", currentUrl);
+    console.log("Current pathname:", window.location.pathname);
     
     // Check if user is already logged in
     const checkUser = async () => {
@@ -21,7 +23,7 @@ export const Login = () => {
           console.error("Session check error:", error);
           toast({
             title: "Error",
-            description: "Failed to check authentication status",
+            description: "Failed to check authentication status. Please try again.",
             variant: "destructive",
           });
           return;
@@ -32,26 +34,33 @@ export const Login = () => {
         }
       } catch (err) {
         console.error("Session check error:", err);
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred. Please try again.",
+          variant: "destructive",
+        });
       }
     };
 
     checkUser();
 
-    // Listen for auth changes with enhanced logging
+    // Enhanced auth state change logging
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state change event:", event);
       console.log("Session details:", session);
+      console.log("Current URL during auth change:", window.location.href);
       
       if (event === 'SIGNED_IN') {
-        console.log("Sign in successful, waiting for trigger completion...");
-        // Add a delay to allow the trigger to complete
+        console.log("Sign in successful, waiting before redirect...");
+        // Add a longer delay to ensure trigger completion
         setTimeout(() => {
+          console.log("Redirecting after successful sign in");
           navigate("/");
           toast({
             title: "Welcome",
             description: "You have been signed in successfully",
           });
-        }, 1000);
+        }, 2000); // Increased delay to 2 seconds
       }
       if (event === 'SIGNED_OUT') {
         console.log("Sign out event received");
@@ -91,6 +100,7 @@ export const Login = () => {
               }
             }}
             providers={[]}
+            redirectTo={window.location.origin}
             localization={{
               variables: {
                 sign_in: {
