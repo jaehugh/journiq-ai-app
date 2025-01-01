@@ -36,8 +36,15 @@ export const Login = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state change:", event, session);
-      if (session) {
-        navigate("/");
+      if (event === 'SIGNED_IN') {
+        // Add a delay to allow the trigger to complete
+        setTimeout(() => {
+          navigate("/");
+          toast({
+            title: "Welcome",
+            description: "You have been signed in successfully",
+          });
+        }, 1000);
       }
       if (event === 'SIGNED_OUT') {
         toast({
@@ -45,11 +52,8 @@ export const Login = () => {
           description: "You have been signed out successfully",
         });
       }
-      if (event === 'SIGNED_IN') {
-        toast({
-          title: "Welcome",
-          description: "You have been signed in successfully",
-        });
+      if (event === 'USER_UPDATED') {
+        console.log("User updated:", session);
       }
     });
 
@@ -79,6 +83,14 @@ export const Login = () => {
               }
             }}
             providers={[]}
+            onError={(error) => {
+              console.error("Auth error:", error);
+              toast({
+                title: "Authentication Error",
+                description: error.message,
+                variant: "destructive",
+              });
+            }}
           />
         </div>
       </div>
