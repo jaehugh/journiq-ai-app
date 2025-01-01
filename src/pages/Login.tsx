@@ -10,7 +10,7 @@ export const Login = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Enhanced URL logging
+    // Enhanced URL and error logging
     const currentUrl = window.location.origin;
     console.log("Current application URL:", currentUrl);
     console.log("Current pathname:", window.location.pathname);
@@ -23,7 +23,7 @@ export const Login = () => {
           console.error("Session check error:", error);
           toast({
             title: "Error",
-            description: "Failed to check authentication status. Please try again.",
+            description: `Authentication error: ${error.message}`,
             variant: "destructive",
           });
           return;
@@ -33,10 +33,10 @@ export const Login = () => {
           navigate("/");
         }
       } catch (err) {
-        console.error("Session check error:", err);
+        console.error("Unexpected session check error:", err);
         toast({
           title: "Error",
-          description: "An unexpected error occurred. Please try again.",
+          description: "An unexpected error occurred. Please try again later.",
           variant: "destructive",
         });
       }
@@ -44,33 +44,39 @@ export const Login = () => {
 
     checkUser();
 
-    // Enhanced auth state change logging
+    // Enhanced auth state change handling with detailed error logging
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state change event:", event);
-      console.log("Session details:", session);
-      console.log("Current URL during auth change:", window.location.href);
+      console.log("Session state:", session ? "Active" : "None");
+      console.log("Current URL:", window.location.href);
       
       if (event === 'SIGNED_IN') {
-        console.log("Sign in successful, waiting before redirect...");
-        // Add a longer delay to ensure trigger completion
+        console.log("Sign in successful, preparing redirect...");
+        // Extended delay to ensure database operations complete
         setTimeout(() => {
-          console.log("Redirecting after successful sign in");
+          console.log("Executing redirect after successful sign in");
           navigate("/");
           toast({
             title: "Welcome",
             description: "You have been signed in successfully",
           });
-        }, 2000); // Increased delay to 2 seconds
+        }, 3000); // Increased delay to 3 seconds
       }
       if (event === 'SIGNED_OUT') {
-        console.log("Sign out event received");
+        console.log("Sign out detected");
         toast({
           title: "Signed out",
           description: "You have been signed out successfully",
         });
       }
       if (event === 'USER_UPDATED') {
-        console.log("User updated event:", session);
+        console.log("User profile updated:", session?.user?.id);
+      }
+      if (event === 'USER_DELETED') {
+        console.log("User account deleted");
+      }
+      if (event === 'PASSWORD_RECOVERY') {
+        console.log("Password recovery initiated");
       }
     });
 
@@ -101,6 +107,14 @@ export const Login = () => {
             }}
             providers={[]}
             redirectTo={window.location.origin}
+            onError={(error) => {
+              console.error("Auth error:", error);
+              toast({
+                title: "Authentication Error",
+                description: error.message,
+                variant: "destructive",
+              });
+            }}
             localization={{
               variables: {
                 sign_in: {
