@@ -33,10 +33,13 @@ export const Login = () => {
 
     checkUser();
 
-    // Listen for auth changes
+    // Listen for auth changes with enhanced logging
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state change:", event, session);
+      console.log("Auth state change event:", event);
+      console.log("Session details:", session);
+      
       if (event === 'SIGNED_IN') {
+        console.log("Sign in successful, waiting for trigger completion...");
         // Add a delay to allow the trigger to complete
         setTimeout(() => {
           navigate("/");
@@ -47,13 +50,14 @@ export const Login = () => {
         }, 1000);
       }
       if (event === 'SIGNED_OUT') {
+        console.log("Sign out event received");
         toast({
           title: "Signed out",
           description: "You have been signed out successfully",
         });
       }
       if (event === 'USER_UPDATED') {
-        console.log("User updated:", session);
+        console.log("User updated event:", session);
       }
     });
 
