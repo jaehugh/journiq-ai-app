@@ -1,3 +1,4 @@
+# A string used as the project reference
 project_id = "rlwtvnffwscsbtlzjeqe"
 
 [api]
@@ -21,17 +22,22 @@ enabled = true
 
 [auth]
 enabled = true
-port = 54325
 
 [realtime]
 enabled = true
 
-[edge_functions]
-[edge_functions.generate-prompt]
+[[functions]]
+name = "generate-prompt"
 verify_jwt = true
 
-[edge_functions.chat]
+[[functions]]
+name = "chat"
 verify_jwt = true
 
-[edge_functions.upload-profile-image]
+[[functions]]
+name = "upload-profile-image"
 verify_jwt = true
+
+[[functions]]
+name = "send-webhook"
+verify_jwt = false
