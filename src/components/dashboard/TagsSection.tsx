@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 
 export const TagsSection = () => {
-  const { data: insights } = useQuery({
+  const { data: insights, isLoading } = useQuery({
     queryKey: ['journalInsights'],
     queryFn: async () => {
       const { data: entries, error } = await supabase
@@ -31,14 +31,20 @@ export const TagsSection = () => {
     <Card className="p-4 md:p-6 space-y-4">
       <h2 className="text-lg md:text-xl font-semibold">Popular Tags</h2>
       <div className="flex flex-wrap gap-2">
-        {insights?.topTags.map(([tag, count]) => (
-          <span 
-            key={tag}
-            className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded"
-          >
-            {tag} ({count})
-          </span>
-        ))}
+        {isLoading ? (
+          <span className="text-sm text-gray-500">Loading tags...</span>
+        ) : insights?.topTags && insights.topTags.length > 0 ? (
+          insights.topTags.map(([tag, count]) => (
+            <span 
+              key={tag}
+              className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded"
+            >
+              {tag} ({count})
+            </span>
+          ))
+        ) : (
+          <span className="text-sm text-gray-500">No tags found</span>
+        )}
       </div>
     </Card>
   );
