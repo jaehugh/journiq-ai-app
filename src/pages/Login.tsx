@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { AuthError } from "@supabase/supabase-js";
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -72,11 +73,18 @@ export const Login = () => {
       if (event === 'USER_UPDATED') {
         console.log("User profile updated:", session?.user?.id);
       }
-      if (event === 'USER_DELETED') {
-        console.log("User account deleted");
-      }
       if (event === 'PASSWORD_RECOVERY') {
         console.log("Password recovery initiated");
+      }
+
+      // Handle any auth errors
+      if (event === 'SIGNED_IN' && !session) {
+        console.error("Sign in event without session");
+        toast({
+          title: "Error",
+          description: "Authentication failed. Please try again.",
+          variant: "destructive",
+        });
       }
     });
 
@@ -107,14 +115,6 @@ export const Login = () => {
             }}
             providers={[]}
             redirectTo={window.location.origin}
-            onError={(error) => {
-              console.error("Auth error:", error);
-              toast({
-                title: "Authentication Error",
-                description: error.message,
-                variant: "destructive",
-              });
-            }}
             localization={{
               variables: {
                 sign_in: {
