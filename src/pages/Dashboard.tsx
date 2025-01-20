@@ -7,6 +7,7 @@ import { EntryDialog } from "@/components/journal/EntryDialog";
 import { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { useProfileData } from "@/hooks/use-profile-data";
 
 type JournalEntry = Tables<"journal_entries">;
 type Goal = Tables<"goals">;
@@ -16,6 +17,7 @@ export const Dashboard = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isGeneratingGoals, setIsGeneratingGoals] = useState(false);
   const { toast } = useToast();
+  const { profile } = useProfileData();
 
   const { data: subscription } = useQuery({
     queryKey: ['subscription'],
@@ -156,7 +158,9 @@ export const Dashboard = () => {
     <div className="space-y-6">
       <header className="space-y-1">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-gray-500">Welcome back to your journal.</p>
+        <p className="text-gray-500">
+          Welcome back to your journal{profile?.display_name ? `, ${profile.display_name}` : ''}!
+        </p>
       </header>
       
       <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
