@@ -153,28 +153,29 @@ export const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-gray-500">Welcome back to your journal.</p>
       </header>
       
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="p-6 space-y-4">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="p-4 md:p-6 space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Goals</h2>
+            <h2 className="text-lg md:text-xl font-semibold">Goals</h2>
             {subscription?.tier === 'pro' && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleGenerateGoals}
                 disabled={isGeneratingGoals}
+                className="whitespace-nowrap"
               >
                 {isGeneratingGoals ? "Generating..." : "Generate Goals"}
               </Button>
             )}
           </div>
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-[300px] overflow-y-auto">
             {isLoadingGoals ? (
               <p className="text-sm text-gray-500">Loading goals...</p>
             ) : goals && goals.length > 0 ? (
@@ -203,9 +204,9 @@ export const Dashboard = () => {
           </div>
         </Card>
         
-        <Card className="p-6 space-y-4">
-          <h2 className="text-xl font-semibold">Most Used Categories</h2>
-          <div className="space-y-2">
+        <Card className="p-4 md:p-6 space-y-4">
+          <h2 className="text-lg md:text-xl font-semibold">Most Used Categories</h2>
+          <div className="space-y-2 max-h-[300px] overflow-y-auto">
             {insights?.topCategories.map(([category, count]) => (
               <div key={category} className="flex justify-between items-center">
                 <span className="text-sm">{category}</span>
@@ -215,8 +216,8 @@ export const Dashboard = () => {
           </div>
         </Card>
 
-        <Card className="p-6 space-y-4">
-          <h2 className="text-xl font-semibold">Popular Tags</h2>
+        <Card className="p-4 md:p-6 space-y-4">
+          <h2 className="text-lg md:text-xl font-semibold">Popular Tags</h2>
           <div className="flex flex-wrap gap-2">
             {insights?.topTags.map(([tag, count]) => (
               <span 
@@ -229,8 +230,8 @@ export const Dashboard = () => {
           </div>
         </Card>
         
-        <Card className="col-span-full p-6 space-y-4">
-          <h2 className="text-xl font-semibold">Recent Entries</h2>
+        <Card className="col-span-full p-4 md:p-6 space-y-4">
+          <h2 className="text-lg md:text-xl font-semibold">Recent Entries</h2>
           {isLoadingEntries ? (
             <p className="text-sm text-gray-500">Loading recent entries...</p>
           ) : recentEntries && recentEntries.length > 0 ? (
@@ -241,9 +242,9 @@ export const Dashboard = () => {
                   className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => handleEntryClick(entry)}
                 >
-                  <div className="flex justify-between items-start mb-2">
+                  <div className="flex flex-col md:flex-row justify-between items-start gap-2 mb-2">
                     <h3 className="font-medium">{entry.title}</h3>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-gray-500 whitespace-nowrap">
                       {format(new Date(entry.created_at), 'MMM d, yyyy')}
                     </span>
                   </div>
