@@ -26,18 +26,15 @@ enabled = true
 [realtime]
 enabled = true
 
-[[functions]]
-name = "generate-prompt"
+[functions]
+[functions.generate-prompt]
 verify_jwt = true
 
-[[functions]]
-name = "chat"
+[functions.chat]
 verify_jwt = true
 
-[[functions]]
-name = "upload-profile-image"
+[functions.upload-profile-image]
 verify_jwt = true
 
-[[functions]]
-name = "send-webhook"
+[functions.send-webhook]
 verify_jwt = false
