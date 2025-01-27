@@ -45,6 +45,8 @@ Deno.serve(async (req) => {
       subscription,
     }
 
+    console.log('Sending webhook data:', webhookData)
+
     // Send to webhook
     const response = await fetch(WEBHOOK_URL, {
       method: 'POST',
@@ -57,6 +59,9 @@ Deno.serve(async (req) => {
     if (!response.ok) {
       throw new Error(`Webhook failed: ${response.statusText}`)
     }
+
+    const responseData = await response.json()
+    console.log('Webhook response:', responseData)
 
     // Log the successful webhook call
     await supabase
@@ -73,6 +78,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
+    console.error('Webhook error:', error)
+    
     // Log the error
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
