@@ -1,44 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { useToast } from "./use-toast";
-
-// Define types for the Web Speech API
-interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
-  resultIndex: number;
-}
-
-interface SpeechRecognitionResultList {
-  [index: number]: SpeechRecognitionResult;
-  length: number;
-}
-
-interface SpeechRecognitionResult {
-  [index: number]: SpeechRecognitionAlternative;
-  isFinal: boolean;
-  length: number;
-}
-
-interface SpeechRecognitionAlternative {
-  transcript: string;
-  confidence: number;
-}
-
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: Event) => void;
-  onend: () => void;
-  start: () => void;
-  stop: () => void;
-}
-
-declare global {
-  interface Window {
-    webkitSpeechRecognition: new () => SpeechRecognition;
-  }
-}
+import { supabase } from "@/integrations/supabase/client";
 
 interface UseSpeechRecognitionProps {
   onTranscriptionComplete: (text: string) => void;
@@ -46,73 +8,77 @@ interface UseSpeechRecognitionProps {
 
 export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecognitionProps) => {
   const [isRecording, setIsRecording] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
-  const transcriptRef = useRef<string>("");
 
   const stopRecording = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
       setIsRecording(false);
-      
-      if (transcriptRef.current) {
-        onTranscriptionComplete(transcriptRef.current.trim());
-        transcriptRef.current = "";
-      }
-
-      toast({
-        title: "Recording complete",
-        description: "Your voice input has been processed.",
-      });
     }
-  }, [toast, onTranscriptionComplete]);
+  }, [isRecording]);
 
-  const startRecording = useCallback(() => {
+  const startRecording = useCallback(async () => {
     try {
-      if (!('webkitSpeechRecognition' in window)) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Speech recognition is not supported in your browser. Please use Chrome.",
-        });
-        return;
-      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
 
-      const SpeechRecognition = window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-      
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        const lastResult = event.results[event.results.length - 1];
-        const transcript = lastResult[0].transcript;
-        transcriptRef.current = transcript;
-      };
-
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: `Error recording voice: Please try again.`,
-        });
-        stopRecording();
-      };
-
-      recognition.onend = () => {
-        // Only restart if we're still supposed to be recording
-        if (isRecording && recognitionRef.current) {
-          recognitionRef.current.start();
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
         }
       };
 
-      recognition.start();
-      recognitionRef.current = recognition;
+      mediaRecorder.onstop = async () => {
+        try {
+          const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+          const reader = new FileReader();
+
+          reader.onloadend = async () => {
+            const base64Audio = (reader.result as string).split(',')[1];
+
+            const { data, error } = await supabase.functions.invoke('transcribe-audio', {
+              body: { audio: base64Audio }
+            });
+
+            if (error) {
+              console.error('Transcription error:', error);
+              toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to transcribe audio. Please try again.",
+              });
+              return;
+            }
+
+            if (data.text) {
+              onTranscriptionComplete(data.text.trim());
+              toast({
+                title: "Success",
+                description: "Voice input processed successfully.",
+              });
+            }
+          };
+
+          reader.readAsDataURL(audioBlob);
+        } catch (error) {
+          console.error('Error processing audio:', error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to process audio. Please try again.",
+          });
+        } finally {
+          // Clean up the media stream
+          stream.getTracks().forEach(track => track.stop());
+        }
+      };
+
+      mediaRecorder.start();
       setIsRecording(true);
-      transcriptRef.current = "";
       
       toast({
         title: "Recording started",
@@ -123,10 +89,10 @@ export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecog
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to start recording. Please try again.",
+        description: "Failed to start recording. Please check your microphone permissions.",
       });
     }
-  }, [isRecording, stopRecording, toast]);
+  }, [onTranscriptionComplete, toast]);
 
   return {
     isRecording,
