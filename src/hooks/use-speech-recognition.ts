@@ -83,15 +83,13 @@ export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecog
       const recognition = new SpeechRecognition();
       
       recognition.continuous = true;
-      recognition.interimResults = false;
+      recognition.interimResults = true;
       recognition.lang = 'en-US';
       
       recognition.onresult = (event: SpeechRecognitionEvent) => {
         const lastResult = event.results[event.results.length - 1];
-        if (lastResult.isFinal) {
-          const transcript = lastResult[0].transcript;
-          transcriptRef.current += transcript + " ";
-        }
+        const transcript = lastResult[0].transcript;
+        transcriptRef.current = transcript;
       };
 
       recognition.onerror = (event) => {
@@ -105,10 +103,9 @@ export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecog
       };
 
       recognition.onend = () => {
-        setIsRecording(false);
-        if (transcriptRef.current) {
-          onTranscriptionComplete(transcriptRef.current.trim());
-          transcriptRef.current = "";
+        // Only restart if we're still supposed to be recording
+        if (isRecording && recognitionRef.current) {
+          recognitionRef.current.start();
         }
       };
 
@@ -129,7 +126,7 @@ export const useSpeechRecognition = ({ onTranscriptionComplete }: UseSpeechRecog
         description: "Failed to start recording. Please try again.",
       });
     }
-  }, [onTranscriptionComplete, stopRecording, toast]);
+  }, [isRecording, stopRecording, toast]);
 
   return {
     isRecording,
